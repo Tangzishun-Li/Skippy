@@ -1,0 +1,597 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+  color: #333;
+  background-color: #f4f4f4;
+}
+
+/* 导航栏样式 */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #2c3e50;
+  color: white;
+  padding: 15px 30px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.navbar-nav {
+  display: flex;
+  gap: 10px;
+}
+
+.nav-btn {
+  background-color: transparent;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.nav-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-btn.active {
+  background-color: #3498db;
+  border-color: #3498db;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* 视图样式 */
+.view {
+  min-height: 600px;
+}
+
+/* 日历样式 */
+.calendar-header {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.calendar-header h2 {
+  margin-bottom: 10px;
+  color: #2c3e50;
+}
+
+.calendar-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 20px 0;
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#prevMonth, #nextMonth {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#prevMonth:hover, #nextMonth:hover {
+  background-color: #2980b9;
+}
+
+#currentMonth {
+  margin: 0 30px;
+  font-size: 24px;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+#calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.calendar-header-day {
+  text-align: center;
+  padding: 15px;
+  font-weight: bold;
+  color: #7f8c8d;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-day:hover {
+  background-color: #f8f9fa;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.calendar-day.today {
+  background-color: #e3f2fd;
+  border-color: #2196f3;
+  box-shadow: 0 2px 4px rgba(33, 150, 243, 0.2);
+}
+
+.calendar-day.today .day-number {
+  color: #2196f3;
+  font-weight: bold;
+}
+
+.calendar-day.other-month {
+  background-color: #f9f9f9;
+  color: #bdbdbd;
+}
+
+.day-number {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #2c3e50;
+}
+
+.course-events {
+  margin-top: 8px;
+  font-size: 12px;
+  flex-grow: 1;
+  overflow-y: auto;
+  max-height: 80px;
+}
+
+.course-event {
+  padding: 4px 6px;
+  border-radius: 4px;
+  margin-bottom: 3px;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: all 0.2s ease;
+}
+
+.course-event:hover {
+  transform: translateX(2px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* 滚动条样式 */
+.course-events::-webkit-scrollbar {
+  width: 4px;
+}
+
+.course-events::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 2px;
+}
+
+.course-events::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 2px;
+}
+
+.course-events::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+.course-event.future {
+  background-color: #95a5a6;
+  color: white;
+}
+
+.course-event.attended {
+  background-color: #27ae60;
+  color: white;
+}
+
+.course-event.skipped {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.course-event.problematic {
+  background-color: #f39c12;
+  color: white;
+}
+
+.lesson-ddl {
+  background-color: #3498db;
+  color: white;
+}
+
+/* 悬停浮窗样式 */
+.tooltip {
+  position: fixed;
+  display: none;
+  z-index: 1000;
+  max-width: 350px;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  padding: 20px;
+  transition: all 0.3s ease;
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.tooltip.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.tooltip-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.tooltip-content h4 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 16px;
+  font-weight: bold;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 8px;
+}
+
+.tooltip-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  cursor: pointer;
+  font-size: 20px;
+  color: #95a5a6;
+  transition: color 0.3s ease;
+  line-height: 1;
+}
+
+.tooltip-close:hover {
+  color: #7f8c8d;
+}
+
+.tooltip-body {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #34495e;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  min-height: 60px;
+}
+
+.tooltip-edit {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
+}
+
+.tooltip-edit:hover {
+  background-color: #2980b9;
+  transform: scale(1.05);
+  box-shadow: 0 3px 6px rgba(52, 152, 219, 0.4);
+}
+
+/* 浮窗动画 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tooltip {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+h2 {
+  margin: 20px 0;
+  color: #34495e;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 10px;
+}
+
+/* 表单样式 */
+.add-course-form {
+  margin-bottom: 40px;
+}
+
+.form-group {
+  margin: 15px 0;
+}
+
+label {
+  display: inline-block;
+  width: 120px;
+  font-weight: bold;
+}
+
+input[type="text"],
+input[type="time"],
+input[type="number"],
+select,
+textarea {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+input[type="text"],
+input[type="number"] {
+  width: 200px;
+}
+
+input[type="time"] {
+  width: 100px;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+button {
+  padding: 10px 20px;
+  background-color: #3498db;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+button:hover {
+  background-color: #2980b9;
+}
+
+/* 课程列表样式 */
+.course-item {
+  margin: 20px 0;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.course-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.delete-course-btn {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.3s ease;
+}
+
+.delete-course-btn:hover {
+  background-color: #c0392b;
+}
+
+.course-item h3 {
+  margin-bottom: 10px;
+  color: #2c3e50;
+}
+
+.lessons-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.lesson-item {
+  padding: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100px;
+  text-align: center;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.lesson-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* 课程状态颜色 */
+.lesson-future {
+  background-color: #95a5a6;
+  color: #fff;
+}
+
+.lesson-attended {
+  background-color: #27ae60;
+  color: #fff;
+}
+
+.lesson-skipped {
+  background-color: #e74c3c;
+  color: #fff;
+}
+
+.lesson-problematic {
+  background-color: #f39c12;
+  color: #fff;
+}
+
+/* 当前周样式 */
+.lesson-item.current-week {
+  border: 2px solid #000;
+  box-shadow: 0 0 0 2px #000;
+  position: relative;
+  z-index: 1;
+}
+
+/* 状态切换菜单 */
+.status-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  width: 150px;
+}
+
+.status-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  margin: 0;
+  background: none;
+  color: #333;
+  border: none;
+  cursor: pointer;
+}
+
+.status-menu button:hover {
+  background-color: #f0f0f0;
+}
+
+/* 弹窗样式 */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 2000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+  max-width: 500px;
+  border-radius: 8px;
+  position: relative;
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* 问题标签 */
+.problem-tag {
+  display: inline-block;
+  background-color: #f39c12;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-left: 5px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .container {
+    margin: 10px;
+    padding: 15px;
+  }
+  
+  .form-group {
+    margin: 10px 0;
+  }
+  
+  label {
+    width: 100%;
+    margin-bottom: 5px;
+  }
+  
+  input[type="text"],
+  input[type="time"],
+  input[type="number"],
+  select {
+    width: 100%;
+  }
+  
+  .lesson-item {
+    width: 80px;
+  }
+}
