@@ -1,3 +1,35 @@
+const { contextBridge, ipcRenderer } = require('electron')
+
+// 暴露通信接口给渲染进程
+contextBridge.exposeInMainWorld('electronAPI', {
+  // 悬浮球相关通信
+  ballWindowMove: (data) => {
+    ipcRenderer.send('ballWindowMove', data)
+  },
+  openMenu: () => {
+    ipcRenderer.send('openMenu')
+  },
+  toggleMainWindow: () => {
+    ipcRenderer.send('toggleMainWindow')
+  },
+  showCalendar: () => {
+    ipcRenderer.send('showCalendar')
+  },
+  showAddCourse: () => {
+    ipcRenderer.send('showAddCourse')
+  },
+  updateBall: () => {
+    ipcRenderer.send('updateBall')
+  },
+  // 监听事件
+  onUpdate: (callback) => {
+    ipcRenderer.on('update', (event, data) => callback(data))
+  },
+  onConfig: (callback) => {
+    ipcRenderer.on('config', (event, data) => callback(data))
+  }
+})
+
 window.addEventListener('DOMContentLoaded', () => {
   const replaceText = (selector, text) => {
     const element = document.getElementById(selector)
