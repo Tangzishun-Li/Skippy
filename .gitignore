@@ -1,5 +1,59 @@
-node_modules
-.trae/
-gemini-chat-20260205-020956
-HiLoop-main
-HiLoop-main.zip
+# Dependency directories
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build output (打包产物)
+dist/
+cache/
+build/
+
+# Electron 打包产物
+*.dmg
+*.app
+*.exe
+win-unpacked/
+mac-unpacked/
+linux-unpacked/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS generated files
+Thumbs.db
+.DS_Store
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# Temporary folders
+tmp/
+temp/

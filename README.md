@@ -13,10 +13,14 @@
   - 未上/旷课：红色
   - 已上但有问题：黄色
   - 未来课程 DDL：蓝色
-- **问题记录**：标记有问题的课程，记录学习问题，方便回顾复习
-- **日历视图**：直观显示课程安排和状态，支持月份导航
 - **悬浮球**：桌面悬浮球快捷操作，支持拖动、悬停展开功能按钮
+- **日历视图**：直观显示课程安排和状态，支持月份导航
 - **系统托盘**：最小化到托盘，后台运行，右键菜单快速操作
+
+### 将要进行的功能
+- **问题记录**：标记有问题的课程，记录学习问题，方便回顾复习
+
+
 
 ### 界面特点
 
@@ -162,41 +166,6 @@ npm run electron:dev
 | `sendToFloatingBall(channel, data)` | `channel: string, data: any` | `void` | 向悬浮球发送消息 |
 | `destroyAllWindows()` | 无 | `void` | 销毁所有窗口 |
 
-#### 参数详细说明
-
-- **`setFloatingBallAlwaysOnTop(flag)`**
-  - `flag`: 布尔值，`true` 表示置顶，`false` 表示取消置顶
-
-- **`moveFloatingBall(x, y)`**
-  - `x`: 屏幕横坐标（像素）
-  - `y`: 屏幕纵坐标（像素）
-
-- **`sendToFloatingBall(channel, data)`**
-  - `channel`: IPC 通道名称，如 `'update'`、`'config'`
-  - `data`: 要发送的数据，可以是任意可序列化的值
-
-#### 使用示例
-
-```javascript
-const windowManager = require('./modules/windowManager')
-
-// 创建窗口
-windowManager.createMainWindow()
-windowManager.createFloatingBallWindow()
-
-// 窗口操作
-windowManager.showMainWindow()
-windowManager.hideMainWindow()
-windowManager.toggleFloatingBall()
-windowManager.setFloatingBallAlwaysOnTop(true)
-windowManager.moveFloatingBall(100, 200)
-
-// 向悬浮球发送数据
-windowManager.sendToFloatingBall('update', [5, 2])
-```
-
----
-
 ### 2. trayManager.js（系统托盘模块）
 
 **文件路径**: `src/main/modules/trayManager.js`
@@ -212,40 +181,6 @@ windowManager.sendToFloatingBall('update', [5, 2])
 | `destroyTray()` | 无 | `void` | 销毁托盘实例 |
 | `updateTooltip(text)` | `text: string` | `void` | 更新托盘提示文本 |
 
-#### 参数详细说明
-
-- **`createTray(windowManager)`**
-  - `windowManager`: 窗口管理模块实例，用于响应菜单操作
-  - 返回: Electron Tray 实例
-
-- **`updateTooltip(text)`**
-  - `text`: 托盘图标悬停时显示的提示文本
-
-#### 托盘菜单功能
-
-- 显示主窗口
-- 隐藏主窗口
-- 显示/隐藏悬浮球
-- 退出应用
-
-#### 使用示例
-
-```javascript
-const trayManager = require('./modules/trayManager')
-const windowManager = require('./modules/windowManager')
-
-// 创建托盘（需要传入 windowManager 以响应菜单操作）
-trayManager.createTray(windowManager)
-
-// 更新托盘提示
-trayManager.updateTooltip('Skippy - 运行中')
-
-// 销毁托盘
-trayManager.destroyTray()
-```
-
----
-
 ### 3. ipcHandlers.js（IPC 处理模块）
 
 **文件路径**: `src/main/modules/ipcHandlers.js`
@@ -258,40 +193,6 @@ trayManager.destroyTray()
 |--------|------|--------|----------|
 | `registerIpcHandlers(windowManager)` | `windowManager: object` | `void` | 注册所有 IPC 事件处理器 |
 | `clearIpcHandlers()` | 无 | `void` | 清除所有 IPC 处理器 |
-
-#### 参数详细说明
-
-- **`registerIpcHandlers(windowManager)`**
-  - `windowManager`: 窗口管理模块实例，用于操作窗口
-
-#### IPC 通信列表
-
-| 通道名称 | 方向 | 数据格式 | 功能描述 |
-|----------|------|----------|----------|
-| `ballWindowMove` | 渲染→主 | `{ x: number, y: number }` | 移动悬浮球位置 |
-| `toggleMainWindow` | 渲染→主 | 无 | 切换主窗口显示状态 |
-| `updateBall` | 渲染→主 | 无 | 请求更新悬浮球数据 |
-| `updateConfig` | 渲染→主 | `any` | 更新悬浮球配置 |
-| `openMenu` | 渲染→主 | 无 | 打开悬浮球右键菜单 |
-| `showCalendar` | 渲染→主 | 无 | 显示日历视图 |
-| `showAddCourse` | 渲染→主 | 无 | 显示添加课程视图 |
-| `update` | 主→渲染 | `[total: number, completed: number]` | 推送悬浮球数据更新 |
-| `config` | 主→渲染 | `any` | 推送配置更新 |
-
-#### 使用示例
-
-```javascript
-const ipcHandlers = require('./modules/ipcHandlers')
-const windowManager = require('./modules/windowManager')
-
-// 注册 IPC 处理器
-ipcHandlers.registerIpcHandlers(windowManager)
-
-// 清除所有处理器（通常在应用退出时使用）
-ipcHandlers.clearIpcHandlers()
-```
-
----
 
 ### 4. preload.js（预加载脚本）
 
@@ -311,88 +212,6 @@ ipcHandlers.clearIpcHandlers()
 | `updateBall()` | 无 | `void` | 更新悬浮球数据 |
 | `onUpdate(callback)` | `callback: (data) => void` | `void` | 监听数据更新 |
 | `onConfig(callback)` | `callback: (config) => void` | `void` | 监听配置更新 |
-
-#### 参数详细说明
-
-- **`ballWindowMove(data)`**
-  - `data.x`: 屏幕横坐标
-  - `data.y`: 屏幕纵坐标
-
-- **`onUpdate(callback)`**
-  - `callback`: 回调函数，接收 `data` 参数，格式为 `[total, completed]`
-
-- **`onConfig(callback)`**
-  - `callback`: 回调函数，接收 `config` 对象
-
-#### 使用示例
-
-```javascript
-// 在渲染进程中使用
-
-// 发送消息
-window.electronAPI.showCalendar()
-window.electronAPI.updateBall()
-window.electronAPI.ballWindowMove({ x: 100, y: 200 })
-
-// 监听消息
-window.electronAPI.onUpdate((data) => {
-  console.log('收到数据更新:', data) // data: [5, 2]
-})
-
-window.electronAPI.onConfig((config) => {
-  console.log('收到配置更新:', config)
-})
-```
-
----
-
-### 5. main.js（入口文件）
-
-**文件路径**: `src/main/main.js`
-
-**功能描述**: 应用的入口文件，负责协调各模块的初始化和应用程序的生命周期管理。
-
-#### 核心职责
-
-- 导入并初始化各功能模块
-- 处理应用启动事件
-- 管理应用退出流程
-
-#### 全局变量
-
-| 变量名 | 类型 | 说明 |
-|--------|------|------|
-| `app.isQuitting` | `boolean` | 标记应用是否正在退出 |
-
-#### 使用示例
-
-```javascript
-const { app, BrowserWindow } = require('electron')
-
-const windowManager = require('./modules/windowManager')
-const trayManager = require('./modules/trayManager')
-const ipcHandlers = require('./modules/ipcHandlers')
-
-app.isQuitting = false
-
-app.whenReady().then(() => {
-  // 初始化各模块
-  windowManager.createMainWindow()
-  windowManager.createFloatingBallWindow()
-  trayManager.createTray(windowManager)
-  ipcHandlers.registerIpcHandlers(windowManager)
-})
-
-app.on('window-all-closed', function () {
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
-})
-
-app.on('before-quit', function () {
-  app.isQuitting = true
-})
-```
 
 ## 使用指南
 
@@ -441,6 +260,110 @@ app.on('before-quit', function () {
   - 隐藏主窗口
   - 显示/隐藏悬浮球
   - 退出应用
+
+## 打包应用
+
+### 打包前准备
+
+1. **确保依赖已安装**：
+   ```bash
+   npm install
+   ```
+
+2. **安装打包工具**：
+   ```bash
+   npm install electron-builder --save-dev
+   npm install cross-env --save-dev
+   ```
+
+### 执行打包
+
+```bash
+# 打包 Windows 版本
+npm run build:win
+
+# 打包 macOS 版本
+npm run build:mac
+
+# 打包 Linux 版本
+npm run build:linux
+
+# 打包所有平台
+npm run build:all
+```
+
+### 打包结果
+
+打包完成后，生成的文件会位于 `dist/` 目录：
+
+| 文件类型 | 文件名 | 用途 |
+|----------|--------|------|
+| 安装包 | `Skippy Setup 0.1.0-beta.1.exe` | 可安装版本，会创建快捷方式 |
+| 便携版 | `Skippy 0.1.0-beta.1.exe` | 绿色便携版，无需安装 |
+| 解包版 | `win-unpacked/` | 已解包的应用文件 |
+
+### 发布应用
+
+#### 方法 1：GitHub Releases
+
+1. **创建 Release**：
+   - 进入 GitHub 仓库 → Releases → Draft a new release
+   - 版本号：`v0.1.0-beta.1`
+   - 标题：`Skippy v0.1.0-beta.1`
+
+2. **上传文件**：
+   - 上传 `Skippy Setup 0.1.0-beta.1.exe`（推荐）
+   - 上传 `Skippy 0.1.0-beta.1.exe`（可选，便携版）
+
+3. **填写说明**：
+   ```markdown
+   ## Skippy v0.1.0-beta.1
+
+   ### 功能特性
+   - 课程管理：添加、删除、编辑课程
+   - 状态管理：支持标记已上、未上、有问题等状态
+   - 问题记录：记录学习问题，方便回顾复习
+   - 日历视图：直观显示课程安排和状态
+   - 悬浮球：桌面悬浮球快捷操作
+   - 系统托盘：后台运行，右键菜单快速操作
+
+   ### 安装方法
+   1. 下载 `Skippy Setup 0.1.0-beta.1.exe`
+   2. 双击运行安装向导
+   3. 按照提示完成安装
+   4. 从桌面快捷方式启动应用
+
+   ### 便携版使用
+   1. 下载 `Skippy 0.1.0-beta.1.exe`
+   2. 直接运行，无需安装
+   3. 可将文件放在任何位置使用
+   ```
+
+#### 方法 2：其他平台
+
+- **百度网盘**：上传安装包和便携版，分享链接
+- **坚果云**：创建分享链接
+- **企业内网**：上传到内部文件服务器
+
+### 打包配置说明
+
+**package.json 中的打包配置**：
+
+| 配置项 | 值 | 说明 |
+|--------|-----|------|
+| 版本号 | `0.1.0-beta.1` | 应用版本号 |
+| 应用名称 | `Skippy` | 应用显示名称 |
+| 应用ID | `com.skippy.app` | 应用唯一标识 |
+| 目标架构 | `x64` | 64位系统 |
+| 目标系统 | `Windows` | 支持的系统 |
+| 安装器类型 | `NSIS` | 支持自定义安装路径 |
+
+### 技术细节
+
+- 使用 **electron-builder** 进行打包
+- 配置了 **NSIS 安装器**，支持自定义安装路径
+- 生成了 **便携版**，方便用户免安装使用
+- 使用了本地缓存文件解决网络下载问题
 
 ## 技术架构
 
@@ -539,6 +462,11 @@ npm run electron
 
 # 启动开发模式
 npm run electron:dev
+
+# 打包应用
+npm run build:win
+npm run build:mac
+npm run build:linux
 ```
 
 ### 添加新功能
@@ -565,6 +493,12 @@ npm run electron:dev
 - 实现悬浮球功能
 - 实现系统托盘功能
 - 项目模块化重构
+
+### v0.1.0-beta.1
+
+- 初始版本
+- 完成基本功能开发
+- 支持 Windows 平台打包
 
 ## 许可证
 

@@ -1,7 +1,9 @@
 {
   "name": "Skippy",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0-beta.1",
+  "description": "课程管理助手 - 一款基于 Electron 的桌面课程管理应用",
+  "author": "Skippy Team",
   "type": "commonjs",
   "main": "src/main/main.js",
   "scripts": {
@@ -9,11 +11,61 @@
     "build": "vite build",
     "preview": "vite preview",
     "electron": "electron .",
-    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\""
+    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "build:win": "cross-env ELECTRON_BUILDER_CACHE=./cache electron-builder --win",
+    "build:mac": "cross-env ELECTRON_BUILDER_CACHE=./cache electron-builder --mac",
+    "build:linux": "cross-env ELECTRON_BUILDER_CACHE=./cache electron-builder --linux",
+    "build:all": "cross-env ELECTRON_BUILDER_CACHE=./cache electron-builder -wml",
+    "dist": "cross-env ELECTRON_BUILDER_CACHE=./cache electron-builder"
+  },
+  "build": {
+    "appId": "com.skippy.app",
+    "productName": "Skippy",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Skippy"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ]
+    }
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
     "electron": "^25.0.0",
+    "electron-builder": "^24.13.3",
     "vite": "^5.0.8",
     "wait-on": "^7.2.0"
   }
