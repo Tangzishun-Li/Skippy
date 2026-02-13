@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Skippy 悬浮球</title>
+  <style>
+    html {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    body {
+      padding: 0;
+      margin: 0;
+      color: white;
+      user-select: none;
+      background: transparent;
+    }
+    div {
+      box-sizing: border-box;
+    }
+    #app {
+      width: 80px;
+      height: 30px;
+    }
+    .warp {
+      width: 80px;
+      height: 30px;
+      overflow: hidden;
+    }
+    .main-container {
+      height: 30px;
+      width: 80px;
+      background-color: #825ee4;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      position: relative;
+      overflow: hidden;
+      opacity: 0.8;
+      cursor: move;
+      transition: all 0.3s ease;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+    .text {
+      z-index: 1;
+    }
+    .finish {
+      position: absolute;
+      width: 80px;
+      height: 100%;
+      background-color: #5e72e4;
+      right: 100%;
+      transition: right 0.3s ease;
+    }
+    .son-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 30px;
+      width: 80px;
+      font-size: 12px;
+    }
+    .son-item {
+      height: 22px;
+      width: 22px;
+      border-radius: 50%;
+      background-color: #5e72e4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+    .son-item:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 15px rgba(94, 114, 228, 0.6);
+    }
+    .son-item svg {
+      width: 12px;
+      height: 12px;
+      pointer-events: none;
+    }
+    .fade-enter-active,
+    .fade-leave-active {
+      transition: opacity 0.2s ease;
+    }
+    .fade-enter,
+    .fade-leave-to {
+      opacity: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <div class="warp" onmousedown="handleMouseDown(event)" onmouseup="handleMouseUp(event)" onmouseenter="showMore()" onmouseleave="hideMore()">
+      <div id="mainContainer" class="main-container">
+        <div class="text" id="ballText">0 : 0</div>
+        <div class="finish" id="progressBar"></div>
+      </div>
+      <div id="sonContainer" class="son-container" style="display: none;">
+        <div class="son-item" onclick="showTodo(event)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        </div>
+        <div class="son-item" onclick="showEssay(event)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        </div>
+        <div class="son-item" onclick="showAddCourse(event)">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    let biasX = 0
+    let biasY = 0
+    const moveS = [0, 0, 0, 0]
+    let mainColor = '#5e72e4'
+    let subColor = '#825ee4'
+    let opacity = 0.8
+    let isNotMore = true
+    let count = [0, 0]
+    
+    // 计算是否为点击（不是拖动）
+    function calcS() {
+      const res = Math.pow(moveS[0] - moveS[2], 2) + Math.pow(moveS[1] - moveS[3], 2)
+      return res < 5
+    }
+    
+    // 处理鼠标移动事件
+    function handleMove(e) {
+      window.electronAPI.ballWindowMove({ x: e.screenX - biasX, y: e.screenY - biasY })
+    }
+    
+    // 处理鼠标按下事件
+    function handleMouseDown(e) {
+      if (e.button == 2) {
+        isNotMore = true
+        window.electronAPI.openMenu()
+        return
+      }
+      biasX = e.clientX
+      biasY = e.clientY
+      moveS[0] = e.screenX - biasX
+      moveS[1] = e.screenY - biasY
+      document.addEventListener('mousemove', handleMove)
+      document.addEventListener('mouseup', handleMouseUp)
+    }
+    
+    // 处理鼠标释放事件
+    function handleMouseUp(e) {
+      moveS[2] = e.screenX - e.clientX
+      moveS[3] = e.screenY - e.clientY
+      biasX = 0
+      biasY = 0
+      document.removeEventListener('mousemove', handleMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+    
+    // 显示更多功能
+    function showMore() {
+      isNotMore = false
+      document.getElementById('mainContainer').style.display = 'none'
+      document.getElementById('sonContainer').style.display = 'flex'
+    }
+    
+    // 隐藏更多功能
+    function hideMore() {
+      isNotMore = true
+      document.getElementById('mainContainer').style.display = 'flex'
+      document.getElementById('sonContainer').style.display = 'none'
+    }
+    
+    // 显示待办事项
+    function showTodo(e) {
+      e.stopPropagation()
+      window.electronAPI.showCalendar()
+    }
+    
+    // 显示随笔
+    function showEssay(e) {
+      e.stopPropagation()
+      window.electronAPI.toggleMainWindow()
+    }
+    
+    // 显示添加课程
+    function showAddCourse(e) {
+      e.stopPropagation()
+      window.electronAPI.showAddCourse()
+    }
+    
+    // 更新悬浮球数据
+    function updateBallData(data) {
+      if (data && Array.isArray(data)) {
+        count = data
+        document.getElementById('ballText').textContent = `${count[0]} : ${count[1]}`
+        
+        // 更新进度条
+        if (count[0] + count[1] > 0) {
+          const percent = parseInt(count[1] * 100 / (count[0] + count[1]))
+          document.getElementById('progressBar').style.right = percent + '%'
+        } else {
+          document.getElementById('progressBar').style.right = '100%'
+        }
+      }
+    }
+    
+    // 更新配置
+    function updateConfig(config) {
+      if (config) {
+        if (config.opacity !== undefined) {
+          opacity = config.opacity
+          document.getElementById('mainContainer').style.opacity = opacity
+        }
+        if (config.mainColor) {
+          mainColor = config.mainColor
+          document.getElementById('progressBar').style.backgroundColor = mainColor
+          const sonItems = document.querySelectorAll('.son-item')
+          sonItems.forEach(item => {
+            item.style.backgroundColor = mainColor
+          })
+        }
+        if (config.subColor) {
+          subColor = config.subColor
+          document.getElementById('mainContainer').style.backgroundColor = subColor
+        }
+      }
+    }
+    
+    // 监听数据更新
+    window.electronAPI.onUpdate(updateBallData)
+    
+    // 监听配置更新
+    window.electronAPI.onConfig(updateConfig)
+    
+    // 请求初始数据
+    window.electronAPI.updateBall()
+  </script>
+</body>
+
+</html>
