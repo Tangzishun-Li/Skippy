@@ -14,6 +14,7 @@
       <button class="nav-btn active" data-view="calendar">日历视图</button>
       <button class="nav-btn" data-view="add-course">添加课程</button>
       <button class="nav-btn" data-view="course-list">课程列表</button>
+      <button class="nav-btn" data-view="import">导入课程</button>
     </div>
   </nav>
   
@@ -26,6 +27,10 @@
           <button id="prevMonth">&lt; 上月</button>
           <h3 id="currentMonth"></h3>
           <button id="nextMonth">下月 &gt;</button>
+          <div class="view-toggle">
+            <button class="view-btn active" data-view="month">月视图</button>
+            <button class="view-btn" data-view="week">周视图</button>
+          </div>
         </div>
       </div>
       <div id="calendar"></div>
@@ -46,7 +51,7 @@
           <input type="time" id="courseEndTime" required>
         </div>
         <div class="form-group">
-          <label for="courseDate">上课日期：</label>
+          <label for="courseDate">开课日期：</label>
           <input type="date" id="courseDate" required>
         </div>
         <div class="form-group">
@@ -69,12 +74,116 @@
     <!-- 课程列表视图 -->
     <div class="view" id="courseListView" style="display: none;">
       <h2>课程列表</h2>
+      <div class="help-guide">
+        <div class="help-toggle">
+          <span class="help-icon">?</span>
+          <span>操作指引</span>
+        </div>
+        <div class="help-content">
+          <div class="help-item">
+            <span class="status-dot attended"></span>
+            <span><strong>已上（无问题）</strong> - 点击课程标记为已上课</span>
+          </div>
+          <div class="help-item">
+            <span class="status-dot skipped"></span>
+            <span><strong>未上/旷课</strong> - 点击课程标记为缺勤</span>
+          </div>
+          <div class="help-item">
+            <span class="status-dot problematic"></span>
+            <span><strong>已上（有问题）</strong> - 点击后可添加问题备注</span>
+          </div>
+          <div class="help-item">
+            <span class="status-dot ddl"></span>
+            <span><strong>DDL</strong> - 为未来课程设置截止日期</span>
+          </div>
+        </div>
+      </div>
       <div id="coursesContainer"></div>
+    </div>
+    
+    <!-- 导入视图 -->
+    <div class="view" id="importView" style="display: none;">
+      <h2>导入课程</h2>
+      <div class="import-tabs">
+        <button class="import-tab active" data-tab="google">Google日历订阅</button>
+        <button class="import-tab" data-tab="ics">ICS文件</button>
+      </div>
+      
+      <!-- Google日历订阅 -->
+      <div class="import-panel" id="googlePanel">
+        <h3>从Google日历导入</h3>
+        <p class="import-desc">输入Google日历的公开订阅链接或.ics地址</p>
+        <form id="googleImportForm">
+          <div class="form-group">
+            <label for="googleCalendarUrl">日历链接：</label>
+            <input type="url" id="googleCalendarUrl" placeholder="https://calendar.google.com/calendar/ical/..." required>
+          </div>
+          <button type="submit">导入</button>
+        </form>
+        <div id="googleImportResult"></div>
+      </div>
+      
+      <!-- ICS文件上传 -->
+      <div class="import-panel" id="icsPanel" style="display: none;">
+        <h3>上传ICS文件</h3>
+        <p class="import-desc">选择本地的.ics日历文件导入</p>
+        <form id="icsImportForm">
+          <div class="form-group">
+            <label for="icsFile">选择文件：</label>
+            <input type="file" id="icsFile" accept=".ics" required>
+          </div>
+          <button type="submit">导入</button>
+        </form>
+        <div id="icsImportResult"></div>
+      </div>
     </div>
   </div>
   
-  <!-- 问题记录弹窗 -->
-  <div class="modal" id="problemModal">
+  <!-- Toast 通知 -->
+<div id="toast" class="toast">
+  <span class="toast-icon">✓</span>
+  <span class="toast-message" id="toastMessage">课程添加成功</span>
+</div>
+
+<!-- 时间轴标注弹窗 -->
+<div class="modal" id="timelineModal">
+  <div class="modal-content">
+    <span class="close" id="timelineClose">&times;</span>
+    <h3>添加时间轴标注</h3>
+    <form id="timelineForm">
+      <input type="hidden" id="timelineCourseId">
+      <div class="form-group">
+        <label>标注类型：</label>
+        <select id="timelineType" required>
+          <option value="before">第X周课程前</option>
+          <option value="between">第X周与第Y周之间</option>
+          <option value="after">第X周课程后</option>
+        </select>
+      </div>
+      <div class="form-group" id="weekStartGroup">
+        <label for="weekStart">开始周：</label>
+        <input type="number" id="weekStart" min="1" required>
+      </div>
+      <div class="form-group" id="weekEndGroup" style="display:none;">
+        <label for="weekEnd">结束周：</label>
+        <input type="number" id="weekEnd" min="1" required>
+      </div>
+      <div class="form-group" id="weekSingleGroup">
+        <label for="weekSingle">指定周：</label>
+        <input type="number" id="weekSingle" min="1" required>
+      </div>
+      <div class="form-group">
+        <label for="timelineLabel">标注名称（可选）：</label>
+        <input type="text" id="timelineLabel" placeholder="如：期末考试、项目截止">
+      </div>
+      <button type="submit">添加标注</button>
+    </form>
+    <div id="timelineList"></div>
+  </div>
+</div>
+
+<!-- 问题记录弹窗 -->
+<div class="modal" id="problemModal">
     <div class="modal-content">
       <span class="close">&times;</span>
       <h3>记录问题</h3>
@@ -100,6 +209,16 @@
     </div>
   </div>
   
-  <script src="js/script.js"></script>
+  <script src="js/utils/dateUtils.js"></script>
+  <script src="js/utils/storage.js"></script>
+  <script src="js/components/toast.js"></script>
+  <script src="js/components/modal.js"></script>
+  <script src="js/core/import.js"></script>
+  <script src="js/core/problem.js"></script>
+  <script src="js/core/status.js"></script>
+  <script src="js/core/timeline.js"></script>
+  <script src="js/core/calendar.js"></script>
+  <script src="js/core/course.js"></script>
+  <script src="js/main.js"></script>
 </body>
 </html>

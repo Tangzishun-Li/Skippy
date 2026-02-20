@@ -1,0 +1,54 @@
+* {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+h2 {
+  font-size: 24px;
+  color: var(--text-main);
+  border-bottom: none;
+  margin-bottom: 25px;
+  position: relative;
+  display: inline-block;
+}
+
+h2::after {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 4px;
+  background: var(--primary-color);
+  border-radius: 2px;
+  margin-top: 8px;
+}
+
+h3 {
+  margin-bottom: 10px;
+  color: var(--text-main);
+}
+
+h4 {
+  margin: 0;
+  color: var(--primary-color);
+  font-size: 16px;
+  font-weight: bold;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+label {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.problem-tag {
+  display: inline-block;
+  background-color: var(--status-problematic);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  margin-left: 5px;
+}

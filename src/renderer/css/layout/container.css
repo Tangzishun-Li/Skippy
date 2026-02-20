@@ -1,0 +1,56 @@
+.container {
+  max-width: 1100px;
+  margin: 0 auto 40px;
+  padding: 30px;
+  background-color: var(--bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(0,0,0,0.02);
+}
+
+.view {
+  min-height: 600px;
+}
+
+.view-toggle {
+  display: inline-flex;
+  background: white;
+  border-radius: 50px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid #eee;
+  margin-left: 15px;
+  overflow: hidden;
+}
+
+.view-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 40px;
+  margin: 0;
+}
+
+.view-btn:hover {
+  color: var(--primary-color);
+  background: rgba(94, 114, 228, 0.08);
+  transform: none;
+  box-shadow: none;
+}
+
+.view-btn.active {
+  background: var(--primary-color);
+  color: white;
+  box-shadow: 0 2px 8px rgba(94, 114, 228, 0.4);
+}
+
+@media (max-width: 768px) {
+  .container {
+    margin: 10px;
+    padding: 15px;
+  }
+}
