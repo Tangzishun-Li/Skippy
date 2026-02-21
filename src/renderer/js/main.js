@@ -33,6 +33,11 @@
 
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
+
+        const fabBtn = document.getElementById('fab-add');
+        if (fabBtn) {
+          fabBtn.style.display = view === 'calendar' ? 'flex' : 'none';
+        }
       });
     });
 

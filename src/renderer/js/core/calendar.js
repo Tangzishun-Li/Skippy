@@ -99,15 +99,15 @@
     if (calendar.id !== 'calendar') {
       calendar.id = 'calendar';
     }
-    const currentMonthEl = document.getElementById('currentMonth');
+    const currentPeriodEl = document.getElementById('currentPeriod');
 
     if (currentView === 'week') {
-      renderWeekView(calendar, currentMonthEl);
+      renderWeekView(calendar, currentPeriodEl);
       return;
     }
 
     const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
-    currentMonthEl.textContent = `${currentDate.getFullYear()}年 ${monthNames[currentDate.getMonth()]}`;
+    currentPeriodEl.textContent = `${currentDate.getFullYear()}年 ${monthNames[currentDate.getMonth()]}`;
 
     calendar.innerHTML = '';
     calendar.className = 'calendar month-view';
@@ -193,19 +193,17 @@
     }
   }
 
-  function renderWeekView(calendar, currentMonthEl) {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
+  function renderWeekView(calendar, currentPeriodEl) {
     const today = new Date();
 
-    const currentWeekStart = new Date(today);
-    currentWeekStart.setDate(today.getDate() - today.getDay());
+    const currentWeekStart = new Date(currentDate);
+    currentWeekStart.setDate(currentDate.getDate() - currentDate.getDay());
 
     const weekEnd = new Date(currentWeekStart);
     weekEnd.setDate(currentWeekStart.getDate() + 6);
 
     const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
-    currentMonthEl.textContent = `${currentWeekStart.getMonth() + 1}月 ${currentWeekStart.getDate()}日 - ${weekEnd.getMonth() + 1}月 ${weekEnd.getDate()}日`;
+    currentPeriodEl.textContent = `${currentWeekStart.getMonth() + 1}月 ${currentWeekStart.getDate()}日 - ${weekEnd.getMonth() + 1}月 ${weekEnd.getDate()}日`;
 
     calendar.innerHTML = '';
     calendar.className = 'calendar week-view';
@@ -264,6 +262,49 @@
         dayCell.style.gridColumn = String(dayIndex + 2);
         dayCell.style.height = '50px';
         dayCell.style.boxSizing = 'border-box';
+
+        dayCell.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          dayCell.style.background = 'rgba(94, 114, 228, 0.1)';
+        });
+
+        dayCell.addEventListener('dragleave', () => {
+          dayCell.style.background = '';
+        });
+
+        dayCell.addEventListener('drop', (e) => {
+          e.preventDefault();
+          dayCell.style.background = '';
+          
+          try {
+            const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+            const targetRow = parseInt(dayCell.style.gridRow);
+            const newStartHour = targetRow - 2 + 6;
+            
+            const courses = window.AppStorage.getCoursesData();
+            const courseIndex = courses.findIndex(c => c.name === data.courseName);
+            
+            if (courseIndex !== -1 && newStartHour >= 6 && newStartHour <= 22) {
+              const course = courses[courseIndex];
+              const [oldStartHour, oldStartMinute] = course.startTime.split(':').map(Number);
+              const [oldEndHour, oldEndMinute] = course.endTime.split(':').map(Number);
+              const duration = (oldEndHour + oldEndMinute / 60) - (oldStartHour + oldStartMinute / 60);
+              
+              const newStartTime = `${String(newStartHour).padStart(2, '0')}:${String(oldStartMinute).padStart(2, '0')}`;
+              const newEndHour = Math.floor(newStartHour + duration);
+              const newEndMinute = Math.round((newStartHour + duration - newEndHour) * 60);
+              const newEndTime = `${String(newEndHour).padStart(2, '0')}:${String(newEndMinute).padStart(2, '0')}`;
+              
+              course.startTime = newStartTime;
+              course.endTime = newEndTime;
+              
+              window.AppStorage.saveCoursesData(courses);
+              renderCalendar();
+            }
+          } catch (err) {
+            console.error('Drop error:', err);
+          }
+        });
 
         calendar.appendChild(dayCell);
       }
@@ -331,7 +372,31 @@
         
         const location = item.course.location || '未知地点';
         const teacher = item.course.teacher || '未知教师';
-        eventEl.title = `${item.course.name}\n时间: ${item.course.startTime} - ${item.course.endTime}\n地点: ${location}\n教师: ${teacher}`;
+        
+        eventEl.addEventListener('mouseenter', (e) => {
+          showTooltip(item.course, e.currentTarget);
+        });
+        
+        eventEl.addEventListener('mouseleave', () => {
+          hideTooltip();
+        });
+        
+        eventEl.addEventListener('click', () => {
+          openTaskSidebar(item.course);
+        });
+        
+        eventEl.draggable = true;
+        eventEl.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('text/plain', JSON.stringify({
+            courseName: item.course.name,
+            originalDayIndex: dayIndex
+          }));
+          setTimeout(() => eventEl.style.opacity = '0.5', 0);
+        });
+        
+        eventEl.addEventListener('dragend', () => {
+          eventEl.style.opacity = '1';
+        });
           
         const eventContent = document.createElement('div');
           eventContent.className = 'week-course-content';
@@ -380,13 +445,36 @@
   }
 
   function initCalendarEvents() {
-    document.getElementById('prevMonth').addEventListener('click', () => {
-      currentDate.setMonth(currentDate.getMonth() - 1);
+    initNotifications();
+    checkUpcomingCourses();
+    initFAB();
+    renderDDLTimeline();
+    updatePeriodButtonText();
+    
+    document.getElementById('close-sidebar')?.addEventListener('click', closeTaskSidebar);
+    document.getElementById('export-ics')?.addEventListener('click', exportToICS);
+    document.getElementById('toggle-timeline')?.addEventListener('click', () => {
+      const panel = document.getElementById('ddl-timeline-panel');
+      if (panel) {
+        panel.classList.toggle('show');
+      }
+    });
+    
+    document.getElementById('prevPeriod').addEventListener('click', () => {
+      if (currentView === 'week') {
+        currentDate.setDate(currentDate.getDate() - 7);
+      } else {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+      }
       renderCalendar();
     });
 
-    document.getElementById('nextMonth').addEventListener('click', () => {
-      currentDate.setMonth(currentDate.getMonth() + 1);
+    document.getElementById('nextPeriod').addEventListener('click', () => {
+      if (currentView === 'week') {
+        currentDate.setDate(currentDate.getDate() + 7);
+      } else {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+      }
       renderCalendar();
     });
 
@@ -395,9 +483,318 @@
         document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentView = btn.dataset.view;
+        updatePeriodButtonText();
         renderCalendar();
       });
     });
+  }
+
+  function updatePeriodButtonText() {
+    const prevBtn = document.getElementById('prevPeriod');
+    const nextBtn = document.getElementById('nextPeriod');
+    if (prevBtn && nextBtn) {
+      if (currentView === 'week') {
+        prevBtn.textContent = '⟪ 上一周';
+        nextBtn.textContent = '下一周 ⟫';
+      } else {
+        prevBtn.textContent = '⟪ 上月';
+        nextBtn.textContent = '下月 ⟫';
+      }
+    }
+  }
+
+  let tooltipEl = null;
+
+  function showTooltip(course, targetElement) {
+    if (!tooltipEl) {
+      tooltipEl = document.createElement('div');
+      tooltipEl.id = 'calendar-tooltip';
+      document.body.appendChild(tooltipEl);
+    }
+
+    const location = course.location || '未知地点';
+    const teacher = course.teacher || '未知教师';
+
+    tooltipEl.innerHTML = `
+      <div class="tooltip-title">${course.name}</div>
+      <div class="tooltip-row"><span class="tooltip-icon">🕒</span> ${course.startTime} - ${course.endTime}</div>
+      <div class="tooltip-row"><span class="tooltip-icon">📍</span> ${location}</div>
+      <div class="tooltip-row"><span class="tooltip-icon">👨‍🏫</span> ${teacher}</div>
+    `;
+
+    const rect = targetElement.getBoundingClientRect();
+    
+    let left = rect.right + 10;
+    if (left + 220 > window.innerWidth) {
+      left = rect.left - 230;
+    }
+    
+    let top = rect.top;
+
+    tooltipEl.style.left = `${left + window.scrollX}px`;
+    tooltipEl.style.top = `${top + window.scrollY}px`;
+    tooltipEl.classList.add('show');
+  }
+
+  function hideTooltip() {
+    if (tooltipEl) {
+      tooltipEl.classList.remove('show');
+    }
+  }
+
+  function openTaskSidebar(course) {
+    const sidebar = document.getElementById('task-sidebar');
+    if (!sidebar) return;
+    
+    document.getElementById('sidebar-title').textContent = course.name;
+    
+    const location = course.location || '未知地点';
+    const teacher = course.teacher || '未知教师';
+    const time = course.startTime && course.endTime 
+      ? `${course.startTime} - ${course.endTime}` 
+      : '时间未设置';
+    
+    document.getElementById('sidebar-tasks').innerHTML = `
+      <p><strong>🕒 时间：</strong>${time}</p>
+      <p><strong>📍 地点：</strong>${location}</p>
+      <p><strong>👨‍🏫 教师：</strong>${teacher}</p>
+      <hr style="border: none; border-top: 1px solid #eee; margin: 15px 0;">
+      <h4>待办事项</h4>
+      <ul>
+        <li><input type="checkbox"> 预习课程内容</li>
+        <li><input type="checkbox"> 完成课后作业</li>
+        <li><input type="checkbox"> 整理课堂笔记</li>
+      </ul>
+    `;
+    
+    sidebar.classList.remove('hidden');
+    setTimeout(() => sidebar.classList.add('show'), 10);
+  }
+
+  function closeTaskSidebar() {
+    const sidebar = document.getElementById('task-sidebar');
+    if (sidebar) {
+      sidebar.classList.remove('show');
+      setTimeout(() => sidebar.classList.add('hidden'), 300);
+    }
+  }
+
+  function initNotifications() {
+    if ('Notification' in window && Notification.permission !== 'granted') {
+      Notification.requestPermission();
+    }
+  }
+
+  function checkUpcomingCourses() {
+    setInterval(() => {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      
+      const courses = window.AppStorage.getCoursesData();
+      const today = now.getDay();
+
+      courses.forEach(course => {
+        if (course.dayOfWeek === today && course.startTime) {
+          const [startHour, startMinute] = course.startTime.split(':').map(Number);
+          
+          const minutesLeft = (startHour * 60 + startMinute) - (currentHour * 60 + currentMinute);
+          
+          if (minutesLeft === 15) {
+            new Notification('Tody 提醒：准备上课啦！', {
+              body: `你的【${course.name}】将在 15 分钟后开始。\n地点：${course.location || '未知'}`
+            });
+          }
+        }
+      });
+    }, 60000);
+  }
+
+  function exportToICS() {
+    const courses = window.AppStorage.getCoursesData();
+    if (!courses || courses.length === 0) {
+      alert('没有可导出的课程！');
+      return;
+    }
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const dateStr = `${year}${month}${day}`;
+
+    let icsString = 
+`BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Tody App//ZH
+CALSCALE:GREGORIAN
+`;
+
+    const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+    courses.forEach(course => {
+      if (!course.startTime || !course.endTime) return;
+      
+      const [startHour, startMinute] = course.startTime.split(':').map(Number);
+      const [endHour, endMinute] = course.endTime.split(':').map(Number);
+      
+      const dayOfWeek = course.dayOfWeek !== undefined ? course.dayOfWeek : 0;
+      const recurDays = dayNames[dayOfWeek];
+      
+      const startTimeStr = `${dateStr}T${String(startHour).padStart(2, '0')}${String(startMinute).padStart(2, '0')}00`;
+      const endTimeStr = `${dateStr}T${String(endHour).padStart(2, '0')}${String(endMinute).padStart(2, '0')}00`;
+
+      icsString += 
+`BEGIN:VEVENT
+SUMMARY:${course.name}
+DTSTART;VALUE=DATE-TIME:${startTimeStr}
+DTEND;VALUE=DATE-TIME:${endTimeStr}
+RRULE:FREQ=WEEKLY;BYDAY=${recurDays}
+LOCATION:${course.location || ''}
+DESCRIPTION:教师：${course.teacher || ''}
+END:VEVENT
+`;
+    });
+
+    icsString += `END:VCALENDAR`;
+
+    const blob = new Blob([icsString], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'my_courses.ics';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  function initFAB() {
+    const fabBtn = document.getElementById('fab-add');
+    const modal = document.getElementById('add-event-modal');
+    const closeBtn = document.getElementById('close-modal');
+    const saveBtn = document.getElementById('save-event-btn');
+
+    if (!fabBtn || !modal) return;
+
+    function updateFABVisibility() {
+      const activeView = document.querySelector('.nav-btn.active')?.dataset.view;
+      if (activeView === 'calendar') {
+        fabBtn.style.display = 'flex';
+      } else {
+        fabBtn.style.display = 'none';
+      }
+    }
+
+    fabBtn.addEventListener('click', () => {
+      modal.classList.remove('hidden');
+      setTimeout(() => modal.classList.add('show'), 10);
+    });
+
+    closeBtn?.addEventListener('click', () => {
+      modal.classList.remove('show');
+      setTimeout(() => modal.classList.add('hidden'), 300);
+    });
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.remove('show');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+      }
+    });
+
+    saveBtn?.addEventListener('click', () => {
+      const name = document.getElementById('event-name').value;
+      const startTime = document.getElementById('event-start').value;
+      const endTime = document.getElementById('event-end').value;
+      const type = document.querySelector('input[name="event-type"]:checked')?.value || 'normal';
+
+      if (!name || !startTime || !endTime) {
+        alert('请填写完整信息');
+        return;
+      }
+
+      const courses = window.AppStorage.getCoursesData() || [];
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+
+      const newCourse = {
+        name,
+        dayOfWeek,
+        startTime,
+        endTime,
+        location: '',
+        teacher: '',
+        status: type === 'ddl' ? 'ddl' : 'normal'
+      };
+
+      courses.push(newCourse);
+      window.AppStorage.saveCoursesData(courses);
+
+      modal.classList.remove('show');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+        document.getElementById('event-name').value = '';
+        document.getElementById('event-start').value = '';
+        document.getElementById('event-end').value = '';
+      }, 300);
+
+      renderCalendar();
+      renderDDLTimeline();
+    });
+  }
+
+  function renderDDLTimeline() {
+    const container = document.getElementById('timeline-container');
+    const panel = document.getElementById('ddl-timeline-panel');
+    if (!container) return;
+
+    const courses = window.AppStorage.getCoursesData() || [];
+    const now = new Date();
+    const today = now.getDay();
+
+    const ddls = courses.filter(c => {
+      if (c.status !== 'ddl') return false;
+      const dayDiff = (c.dayOfWeek + 7 - today) % 7;
+      const targetDate = new Date(now);
+      targetDate.setDate(now.getDate() + dayDiff);
+      return targetDate > now;
+    }).map(c => {
+      const dayDiff = (c.dayOfWeek + 7 - today) % 7;
+      const targetDate = new Date(now);
+      targetDate.setDate(now.getDate() + dayDiff);
+      const [hour, minute] = c.startTime.split(':').map(Number);
+      targetDate.setHours(hour, minute, 0);
+      return { ...c, targetDate, dayDiff };
+    }).sort((a, b) => a.targetDate - b.targetDate);
+
+    if (ddls.length === 0) {
+      container.innerHTML = '<p style="text-align:center;color:#999;">暂无DDL</p>';
+      return;
+    }
+
+    container.innerHTML = ddls.map(ddl => {
+      const diff = ddl.targetDate - now;
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      let countdownText = '';
+      if (days > 0) countdownText = `还剩 ${days} 天 ${hours} 小时`;
+      else if (hours > 0) countdownText = `还剩 ${hours} 小时`;
+      else countdownText = '即将截止！';
+
+      const dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
+      return `
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">${ddl.name}</div>
+            <div class="timeline-time">${dayNames[ddl.dayOfWeek]} ${ddl.startTime} - ${ddl.endTime}</div>
+            <div class="timeline-countdown">${countdownText}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
   }
 
   window.Calendar = {

@@ -15,6 +15,8 @@
       <button class="nav-btn" data-view="add-course">添加课程</button>
       <button class="nav-btn" data-view="course-list">课程列表</button>
       <button class="nav-btn" data-view="import">导入课程</button>
+      <button class="nav-btn" id="export-ics">导出课程</button>
+      <button class="nav-btn" id="toggle-timeline">DDL时间轴</button>
     </div>
   </nav>
   
@@ -24,9 +26,9 @@
       <div class="calendar-header">
         <h2>课程日历</h2>
         <div class="calendar-controls">
-          <button id="prevMonth">&lt; 上月</button>
-          <h3 id="currentMonth"></h3>
-          <button id="nextMonth">下月 &gt;</button>
+          <button id="prevPeriod">⟪ 上月</button>
+          <h3 id="currentPeriod"></h3>
+          <button id="nextPeriod">下月 ⟫</button>
           <div class="view-toggle">
             <button class="view-btn active" data-view="month">月视图</button>
             <button class="view-btn" data-view="week">周视图</button>
@@ -34,6 +36,58 @@
         </div>
       </div>
       <div id="calendar"></div>
+    </div>
+    
+    <button id="fab-add" class="fab-button">
+      <span class="fab-icon">+</span>
+    </button>
+
+    <div id="add-event-modal" class="glass-modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>✨ 新增日程</h3>
+          <button class="close-btn" id="close-modal">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="input-group">
+            <input type="text" id="event-name" required>
+            <label>日程 / 课程名称</label>
+            <div class="input-line"></div>
+          </div>
+          <div class="form-row">
+            <div class="input-group">
+              <input type="time" id="event-start" required>
+              <label class="active">开始时间</label>
+            </div>
+            <div class="input-group">
+              <input type="time" id="event-end" required>
+              <label class="active">结束时间</label>
+            </div>
+          </div>
+          <div class="type-selector">
+            <label><input type="radio" name="event-type" value="normal" checked> 普通</label>
+            <label class="type-ddl"><input type="radio" name="event-type" value="ddl"> ⚠️ DDL</label>
+          </div>
+          <button id="save-event-btn" class="glow-btn">保存日程</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="ddl-timeline-panel" class="timeline-panel">
+      <div class="timeline-header">
+        <h3>🔥 死亡倒计时 (DDLs)</h3>
+      </div>
+      <div class="timeline-container" id="timeline-container">
+      </div>
+    </div>
+    
+    <div id="task-sidebar" class="task-sidebar hidden">
+      <div class="sidebar-header">
+        <h3 id="sidebar-title">课程详情</h3>
+        <button id="close-sidebar">×</button>
+      </div>
+      <div class="sidebar-content" id="sidebar-tasks">
+      </div>
     </div>
     
     <!-- 添加课程视图 -->
