@@ -93,7 +93,12 @@
   }
 
   function renderCalendar() {
-    const calendar = document.getElementById('calendar');
+    const calendar = document.getElementById('calendar') || document.getElementById('calendar-week-view');
+    if (!calendar) return;
+    
+    if (calendar.id !== 'calendar') {
+      calendar.id = 'calendar';
+    }
     const currentMonthEl = document.getElementById('currentMonth');
 
     if (currentView === 'week') {
@@ -106,6 +111,7 @@
 
     calendar.innerHTML = '';
     calendar.className = 'calendar month-view';
+    calendar.id = 'calendar';
     calendar.style.gridTemplateRows = 'auto repeat(6, 1fr)';
 
     const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
@@ -203,54 +209,48 @@
 
     calendar.innerHTML = '';
     calendar.className = 'calendar week-view';
+    calendar.id = 'calendar-week-view';
 
     const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
-    const headerRow = document.createElement('div');
-    headerRow.className = 'calendar-week-header';
-
-    const timeHeader = document.createElement('div');
-    timeHeader.className = 'calendar-header-day time-column';
-    timeHeader.textContent = '时间';
-    headerRow.appendChild(timeHeader);
-
-    weekDays.forEach((day, index) => {
-      const dayHeader = document.createElement('div');
-      dayHeader.className = 'calendar-header-day';
-
-      const weekDate = new Date(currentWeekStart);
-      weekDate.setDate(weekDate.getDate() + index);
-
-      dayHeader.innerHTML = `<span class="week-day-name">${day}</span><span class="week-day-date">${weekDate.getDate()}</span>`;
-
-      if (weekDate.getDate() === today.getDate() &&
-          weekDate.getMonth() === today.getMonth() &&
-          weekDate.getFullYear() === today.getFullYear()) {
-        dayHeader.classList.add('today');
+    
+    for (let i = 0; i < 8; i++) {
+      const headerCell = document.createElement('div');
+      headerCell.className = 'calendar-header-day';
+      if (i === 0) {
+        headerCell.classList.add('time-column');
+        headerCell.textContent = '时间';
+      } else {
+        const dayIndex = i - 1;
+        const weekDate = new Date(currentWeekStart);
+        weekDate.setDate(currentWeekStart.getDate() + dayIndex);
+        headerCell.innerHTML = `<span class="week-day-name">${weekDays[dayIndex]}</span><span class="week-day-date">${weekDate.getDate()}</span>`;
+        if (weekDate.getDate() === today.getDate() && weekDate.getMonth() === today.getMonth() && weekDate.getFullYear() === today.getFullYear()) {
+          headerCell.classList.add('today');
+        }
       }
-
-      headerRow.appendChild(dayHeader);
-    });
-    calendar.appendChild(headerRow);
+      headerCell.style.gridRow = '1';
+      headerCell.style.gridColumn = String(i + 1);
+      calendar.appendChild(headerCell);
+    }
 
     for (let hour = 6; hour <= 22; hour++) {
-      const timeRow = document.createElement('div');
-      timeRow.className = 'calendar-time-row';
-
+      const rowIndex = hour - 6 + 2;
+      
       const timeCell = document.createElement('div');
       timeCell.className = 'calendar-time-cell time-column';
       timeCell.textContent = `${hour}:00`;
-      timeRow.appendChild(timeCell);
+      timeCell.style.gridRow = String(rowIndex);
+      timeCell.style.gridColumn = '1';
+      calendar.appendChild(timeCell);
 
       for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
         const dayCell = document.createElement('div');
         dayCell.className = 'calendar-day-cell';
-
+        
         const cellDate = new Date(currentWeekStart);
         cellDate.setDate(currentWeekStart.getDate() + dayIndex);
 
-        if (cellDate.getDate() === today.getDate() &&
-            cellDate.getMonth() === today.getMonth() &&
-            cellDate.getFullYear() === today.getFullYear()) {
+        if (cellDate.getDate() === today.getDate() && cellDate.getMonth() === today.getMonth() && cellDate.getFullYear() === today.getFullYear()) {
           dayCell.classList.add('today');
         }
 
@@ -260,46 +260,123 @@
           dayCell.classList.add('saturday');
         }
 
-        const dayCourses = getCoursesForDate(cellDate);
-        dayCourses.forEach(courseEvent => {
-          const courses = window.AppStorage.getCoursesData();
-          const course = courses.find(c => c.name === courseEvent.name);
-          if (course && course.startTime) {
-            const [courseHour, courseMinute] = course.startTime.split(':').map(Number);
+        dayCell.style.gridRow = String(rowIndex);
+        dayCell.style.gridColumn = String(dayIndex + 2);
+        dayCell.style.height = '50px';
+        dayCell.style.boxSizing = 'border-box';
 
-            if (courseHour === hour) {
-              const eventEl = document.createElement('div');
-              eventEl.className = `week-course-event ${courseEvent.status}`;
-
-              const eventContent = document.createElement('div');
-              eventContent.className = 'week-course-content';
-
-              const eventName = document.createElement('span');
-              eventName.className = 'week-course-name';
-              eventName.textContent = course.name;
-
-              const eventTime = document.createElement('span');
-              eventTime.className = 'week-course-time';
-              eventTime.textContent = `${course.startTime} - ${course.endTime}`;
-
-              eventContent.appendChild(eventName);
-              eventContent.appendChild(eventTime);
-              eventEl.appendChild(eventContent);
-
-              if (courseEvent.status === 'problematic' && courseEvent.problem) {
-                eventEl.classList.add('has-problem');
-              }
-
-              dayCell.appendChild(eventEl);
-            }
-          }
-        });
-
-        timeRow.appendChild(dayCell);
+        calendar.appendChild(dayCell);
       }
-
-      calendar.appendChild(timeRow);
     }
+
+    const courses = window.AppStorage.getCoursesData();
+    calendar.style.position = 'relative';
+    for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+      const cellDate = new Date(currentWeekStart);
+      cellDate.setDate(currentWeekStart.getDate() + dayIndex);
+      const dayCourses = getCoursesForDate(cellDate);
+      
+      const sortedCourses = dayCourses
+        .map(courseEvent => {
+          const course = courses.find(c => c.name === courseEvent.name);
+          if (!course || !course.startTime || !course.endTime) return null;
+          const [startHour, startMinute] = course.startTime.split(':').map(Number);
+          const [endHour, endMinute] = course.endTime.split(':').map(Number);
+          return {
+            courseEvent,
+            course,
+            startHour,
+            startMinute,
+            endHour,
+            endMinute,
+            startTime: startHour + startMinute / 60,
+            endTime: endHour + endMinute / 60
+          };
+        })
+        .filter(c => c !== null && c.startHour >= 6 && c.startHour <= 22)
+        .sort((a, b) => a.startTime - b.startTime);
+      
+      const columns = [];
+      sortedCourses.forEach(item => {
+        let columnIndex = 0;
+        for (let i = 0; i < columns.length; i++) {
+          if (item.startTime >= columns[i]) {
+            columnIndex = i;
+            break;
+          }
+          columnIndex = i + 1;
+        }
+        columns[columnIndex] = item.endTime;
+        
+        const durationHours = item.endTime - item.startTime;
+        const topOffset = (item.startMinute / 60) * 50;
+        const startRow = item.startHour - 6 + 2;
+        const dayColumn = dayIndex + 2;
+        
+        const totalColumns = columns.length;
+        const widthPercent = 100 / totalColumns;
+        
+        const eventEl = document.createElement('div');
+        eventEl.className = `week-course-event ${item.courseEvent.status}`;
+        eventEl.style.position = 'absolute';
+        eventEl.style.gridRowStart = String(startRow);
+        eventEl.style.gridColumnStart = String(dayColumn);
+        eventEl.style.gridColumnEnd = `span 1`;
+        eventEl.style.top = `${topOffset}px`;
+        eventEl.style.height = `${Math.max(durationHours * 50, 20)}px`;
+        eventEl.style.width = `calc(${widthPercent}% - 8px)`;
+        eventEl.style.left = `${columnIndex * widthPercent}%`;
+        eventEl.style.margin = '2px 4px';
+        eventEl.style.zIndex = '20';
+        
+        const location = item.course.location || '未知地点';
+        const teacher = item.course.teacher || '未知教师';
+        eventEl.title = `${item.course.name}\n时间: ${item.course.startTime} - ${item.course.endTime}\n地点: ${location}\n教师: ${teacher}`;
+          
+        const eventContent = document.createElement('div');
+          eventContent.className = 'week-course-content';
+
+          const eventName = document.createElement('span');
+          eventName.className = 'week-course-name';
+          eventName.textContent = item.course.name;
+
+          const eventTime = document.createElement('span');
+          eventTime.className = 'week-course-time';
+          eventTime.textContent = `${item.course.startTime} - ${item.course.endTime}`;
+
+          eventContent.appendChild(eventName);
+          eventContent.appendChild(eventTime);
+          eventEl.appendChild(eventContent);
+
+          if (item.courseEvent.status === 'problematic' && item.courseEvent.problem) {
+            eventEl.classList.add('has-problem');
+          }
+
+          calendar.appendChild(eventEl);
+      });
+    }
+
+    const nowIndicator = document.createElement('div');
+    nowIndicator.className = 'now-indicator';
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    if (currentHour >= 6 && currentHour <= 22) {
+      const topPosition = (currentHour - 6 + currentMinute / 60) * 50 + 50;
+      nowIndicator.style.top = `${topPosition}px`;
+      nowIndicator.style.zIndex = '30';
+      
+      const nowDot = document.createElement('div');
+      nowDot.className = 'now-dot';
+      nowIndicator.appendChild(nowDot);
+      
+      calendar.appendChild(nowIndicator);
+    }
+
+    requestAnimationFrame(() => {
+      const scrollToPosition = (currentHour - 6 + currentMinute / 60) * 50;
+      calendar.scrollTop = Math.max(0, scrollToPosition - 200);
+    });
   }
 
   function initCalendarEvents() {
