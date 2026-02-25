@@ -453,10 +453,28 @@
     
     document.getElementById('close-sidebar')?.addEventListener('click', closeTaskSidebar);
     document.getElementById('export-ics')?.addEventListener('click', exportToICS);
+    
+    document.getElementById('import-to-course-list')?.addEventListener('click', () => {
+      window.AppView.switchView('import');
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('[data-view="import"]')?.classList.add('active');
+    });
+    
+    document.getElementById('export-from-course-list')?.addEventListener('click', exportToICS);
+    
     document.getElementById('toggle-timeline')?.addEventListener('click', () => {
       const panel = document.getElementById('ddl-timeline-panel');
       if (panel) {
         panel.classList.toggle('show');
+      }
+    });
+    
+    document.getElementById('collapse-timeline')?.addEventListener('click', () => {
+      const panel = document.getElementById('ddl-timeline-panel');
+      if (panel) {
+        panel.classList.toggle('collapsed');
+        const btn = document.getElementById('collapse-timeline');
+        btn.textContent = panel.classList.contains('collapsed') ? '+' : '−';
       }
     });
     
@@ -546,7 +564,13 @@
     const sidebar = document.getElementById('task-sidebar');
     if (!sidebar) return;
     
+    if (sidebar.classList.contains('show') && sidebar.dataset.courseId === String(course.id)) {
+      closeTaskSidebar();
+      return;
+    }
+    
     document.getElementById('sidebar-title').textContent = course.name;
+    sidebar.dataset.courseId = course.id;
     
     const location = course.location || '未知地点';
     const teacher = course.teacher || '未知教师';
@@ -575,6 +599,7 @@
     const sidebar = document.getElementById('task-sidebar');
     if (sidebar) {
       sidebar.classList.remove('show');
+      delete sidebar.dataset.courseId;
       setTimeout(() => sidebar.classList.add('hidden'), 300);
     }
   }

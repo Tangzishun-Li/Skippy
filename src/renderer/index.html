@@ -76,6 +76,7 @@
     <div id="ddl-timeline-panel" class="timeline-panel">
       <div class="timeline-header">
         <h3>🔥 死亡倒计时 (DDLs)</h3>
+        <button id="collapse-timeline" class="collapse-btn">−</button>
       </div>
       <div class="timeline-container" id="timeline-container">
       </div>
@@ -127,7 +128,13 @@
     
     <!-- 课程列表视图 -->
     <div class="view" id="courseListView" style="display: none;">
-      <h2>课程列表</h2>
+      <div class="view-header">
+        <h2>课程列表</h2>
+        <div class="view-actions">
+          <button id="import-to-course-list" class="action-btn" title="导入课程">📥 导入</button>
+          <button id="export-from-course-list" class="action-btn" title="导出课程">📤 导出</button>
+        </div>
+      </div>
       <div class="help-guide">
         <div class="help-toggle">
           <span class="help-icon">?</span>
