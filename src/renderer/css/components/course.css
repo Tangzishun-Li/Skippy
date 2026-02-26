@@ -6,7 +6,6 @@
 
 .view-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
   padding-bottom: 15px;
@@ -16,9 +15,10 @@
 .view-header h2 {
   margin: 0;
   color: var(--text-main);
+  margin-right: 20px;
 }
 
-.view-actions {
+.view-header .view-actions {
   display: flex;
   gap: 10px;
 }

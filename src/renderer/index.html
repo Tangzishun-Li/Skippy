@@ -12,11 +12,8 @@
     <div class="navbar-brand">Skippy</div>
     <div class="navbar-nav">
       <button class="nav-btn active" data-view="calendar">日历视图</button>
-      <button class="nav-btn" data-view="add-course">添加课程</button>
       <button class="nav-btn" data-view="course-list">课程列表</button>
-      <button class="nav-btn" data-view="import">导入课程</button>
-      <button class="nav-btn" id="export-ics">导出课程</button>
-      <button class="nav-btn" id="toggle-timeline">DDL时间轴</button>
+      <button class="nav-btn" id="toggle-timeline">时间轴</button>
     </div>
   </nav>
   
@@ -75,7 +72,10 @@
 
     <div id="ddl-timeline-panel" class="timeline-panel">
       <div class="timeline-header">
-        <h3>🔥 死亡倒计时 (DDLs)</h3>
+        <div class="timeline-header-content">
+          <span class="timeline-icon">⏰</span>
+          <h3>时间轴</h3>
+        </div>
         <button id="collapse-timeline" class="collapse-btn">−</button>
       </div>
       <div class="timeline-container" id="timeline-container">
@@ -91,39 +91,100 @@
       </div>
     </div>
     
-    <!-- 添加课程视图 -->
-    <div class="view" id="addCourseView" style="display: none;">
-      <h2>添加课程</h2>
-      <form id="courseForm">
-        <div class="form-group">
-          <label for="courseName">课程名称：</label>
-          <input type="text" id="courseName" required>
+    <!-- 课程设置侧栏 -->
+    <div id="course-settings-sidebar" class="task-sidebar hidden">
+      <div class="sidebar-header">
+        <h3>课程设置</h3>
+        <button id="close-course-settings">×</button>
+      </div>
+      <div class="sidebar-content">
+        <!-- 添加课程表单 -->
+        <div class="settings-section">
+          <h4>添加课程</h4>
+          <form id="courseForm">
+            <div class="form-group">
+              <label for="courseName">课程名称：</label>
+              <input type="text" id="courseName" required>
+            </div>
+            <div class="form-group">
+              <label for="courseTime">上课时间：</label>
+              <input type="time" id="courseStartTime" required>
+              <span>至</span>
+              <input type="time" id="courseEndTime" required>
+            </div>
+            <div class="form-group">
+              <label for="courseDate">开课日期：</label>
+              <input type="date" id="courseDate" required>
+            </div>
+            <div class="form-group">
+              <label for="courseFrequency">频率：</label>
+              <select id="courseFrequency" required>
+                <option value="weekly">每周</option>
+                <option value="biweekly">每两周</option>
+                <option value="monthly">每个月</option>
+                <option value="daily">每天</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="repeatCount">重复次数：</label>
+              <input type="number" id="repeatCount" min="1" required>
+            </div>
+            <button type="submit" class="glow-btn">添加课程</button>
+          </form>
         </div>
-        <div class="form-group">
-          <label for="courseTime">上课时间：</label>
-          <input type="time" id="courseStartTime" required>
-          <span>至</span>
-          <input type="time" id="courseEndTime" required>
+      </div>
+    </div>
+
+    <!-- 导入侧栏 -->
+    <div id="import-sidebar" class="task-sidebar hidden">
+      <div class="sidebar-header">
+        <h3>导入课程</h3>
+        <button id="close-import-sidebar">×</button>
+      </div>
+      <div class="sidebar-content">
+        <div class="import-tabs">
+          <button class="import-tab active" data-tab="google">Google日历订阅</button>
+          <button class="import-tab" data-tab="ics">ICS文件</button>
         </div>
-        <div class="form-group">
-          <label for="courseDate">开课日期：</label>
-          <input type="date" id="courseDate" required>
+        
+        <div class="import-panel" id="sidebar-googlePanel">
+          <h5>从Google日历导入</h5>
+          <p class="import-desc">输入Google日历的公开订阅链接或.ics地址</p>
+          <form id="sidebar-googleImportForm">
+            <div class="form-group">
+              <label for="sidebar-googleCalendarUrl">日历链接：</label>
+              <input type="url" id="sidebar-googleCalendarUrl" placeholder="https://calendar.google.com/calendar/ical/..." required>
+            </div>
+            <button type="submit">导入</button>
+          </form>
+          <div id="sidebar-googleImportResult"></div>
         </div>
-        <div class="form-group">
-          <label for="courseFrequency">频率：</label>
-          <select id="courseFrequency" required>
-            <option value="weekly">每周</option>
-            <option value="biweekly">每两周</option>
-            <option value="monthly">每个月</option>
-            <option value="daily">每天</option>
-          </select>
+        
+        <div class="import-panel" id="sidebar-icsPanel" style="display: none;">
+          <h5>上传ICS文件</h5>
+          <p class="import-desc">选择本地的.ics日历文件导入</p>
+          <form id="sidebar-icsImportForm">
+            <div class="form-group">
+              <label for="sidebar-icsFile">选择文件：</label>
+              <input type="file" id="sidebar-icsFile" accept=".ics" required>
+            </div>
+            <button type="submit">导入</button>
+          </form>
+          <div id="sidebar-icsImportResult"></div>
         </div>
-        <div class="form-group">
-          <label for="repeatCount">重复次数：</label>
-          <input type="number" id="repeatCount" min="1" required>
-        </div>
-        <button type="submit">添加课程</button>
-      </form>
+      </div>
+    </div>
+    
+    <!-- 导出功能 -->
+    <div id="export-sidebar" class="task-sidebar hidden">
+      <div class="sidebar-header">
+        <h3>导出课程</h3>
+        <button id="close-export-sidebar">×</button>
+      </div>
+      <div class="sidebar-content">
+        <p>点击下方按钮导出课程到ICS文件</p>
+        <button id="sidebar-export-btn" class="glow-btn" style="margin-top: 20px;">📤 导出为ICS文件</button>
+      </div>
     </div>
     
     <!-- 课程列表视图 -->
@@ -131,6 +192,7 @@
       <div class="view-header">
         <h2>课程列表</h2>
         <div class="view-actions">
+          <button id="open-course-settings" class="action-btn" title="课程设置">⚙️ 课程设置</button>
           <button id="import-to-course-list" class="action-btn" title="导入课程">📥 导入</button>
           <button id="export-from-course-list" class="action-btn" title="导出课程">📤 导出</button>
         </div>
@@ -280,6 +342,7 @@
   <script src="js/core/timeline.js"></script>
   <script src="js/core/calendar.js"></script>
   <script src="js/core/course.js"></script>
+  <script src="js/modules/course-settings.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

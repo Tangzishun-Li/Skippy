@@ -2,29 +2,28 @@
   'use strict';
 
   function switchView(view) {
-    document.getElementById('calendarView').style.display = 'none';
-    document.getElementById('addCourseView').style.display = 'none';
-    document.getElementById('courseListView').style.display = 'none';
-    document.getElementById('importView').style.display = 'none';
+    const calendarView = document.getElementById('calendarView');
+    const courseListView = document.getElementById('courseListView');
+
+    if (calendarView) calendarView.style.display = 'none';
+    if (courseListView) courseListView.style.display = 'none';
 
     if (view === 'calendar') {
-      document.getElementById('calendarView').style.display = 'block';
-    } else if (view === 'add-course') {
-      document.getElementById('addCourseView').style.display = 'block';
+      if (calendarView) calendarView.style.display = 'block';
     } else if (view === 'course-list') {
-      document.getElementById('courseListView').style.display = 'block';
-    } else if (view === 'import') {
-      document.getElementById('importView').style.display = 'block';
+      if (courseListView) courseListView.style.display = 'block';
     }
   }
 
   function bindEventListeners() {
     const courseForm = document.getElementById('courseForm');
 
-    courseForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-      window.CourseManager.addCourse(e);
-    });
+    if (courseForm) {
+      courseForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        window.CourseManager.addCourse(e);
+      });
+    }
 
     document.querySelectorAll('.nav-btn').forEach(btn => {
       btn.addEventListener('click', () => {

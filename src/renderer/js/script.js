@@ -650,19 +650,15 @@ function saveProblem(e) {
 function switchView(view) {
   // 隐藏所有视图
   document.getElementById('calendarView').style.display = 'none';
-  document.getElementById('addCourseView').style.display = 'none';
   document.getElementById('courseListView').style.display = 'none';
-  document.getElementById('importView').style.display = 'none';
   
   // 显示选中的视图
   if (view === 'calendar') {
     document.getElementById('calendarView').style.display = 'block';
-  } else if (view === 'add-course') {
-    document.getElementById('addCourseView').style.display = 'block';
   } else if (view === 'course-list') {
     document.getElementById('courseListView').style.display = 'block';
-  } else if (view === 'import') {
-    document.getElementById('importView').style.display = 'block';
+  } else if (view === 'course-settings') {
+    // 课程设置通过侧栏显示，不需要切换视图
   }
 }
 

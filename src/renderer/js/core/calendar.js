@@ -421,27 +421,40 @@
       });
     }
 
-    const nowIndicator = document.createElement('div');
-    nowIndicator.className = 'now-indicator';
     const now = new Date();
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
-    if (currentHour >= 6 && currentHour <= 22) {
-      const topPosition = (currentHour - 6 + currentMinute / 60) * 50 + 50;
-      nowIndicator.style.top = `${topPosition}px`;
-      nowIndicator.style.zIndex = '30';
-      
+    const currentDayOfWeek = now.getDay();
+    const nowDate = now.getDate();
+    const nowMonth = now.getMonth();
+    const nowYear = now.getFullYear();
+    
+    const displayWeekStart = new Date(currentDate);
+    displayWeekStart.setDate(currentDate.getDate() - currentDate.getDay());
+    const displayWeekEnd = new Date(displayWeekStart);
+    displayWeekEnd.setDate(displayWeekStart.getDate() + 6);
+    
+    const isCurrentWeek = nowYear >= displayWeekStart.getFullYear() && 
+                          nowYear <= displayWeekEnd.getFullYear() &&
+                          nowMonth >= displayWeekStart.getMonth() && 
+                          nowMonth <= displayWeekEnd.getMonth() &&
+                          nowDate >= displayWeekStart.getDate() && 
+                          nowDate <= displayWeekEnd.getDate();
+    
+    if (currentHour >= 6 && currentHour <= 22 && isCurrentWeek) {
+      const gridColumn = currentDayOfWeek + 2;
+       
       const nowDot = document.createElement('div');
       nowDot.className = 'now-dot';
-      nowIndicator.appendChild(nowDot);
+      nowDot.style.gridColumn = `${gridColumn}`;
       
-      calendar.appendChild(nowIndicator);
+      calendar.appendChild(nowDot);
+      
+      requestAnimationFrame(() => {
+        const scrollToPosition = (currentHour - 6 + currentMinute / 60) * 50;
+        calendar.scrollTop = Math.max(0, scrollToPosition - 200);
+      });
     }
-
-    requestAnimationFrame(() => {
-      const scrollToPosition = (currentHour - 6 + currentMinute / 60) * 50;
-      calendar.scrollTop = Math.max(0, scrollToPosition - 200);
-    });
   }
 
   function initCalendarEvents() {
@@ -452,15 +465,6 @@
     updatePeriodButtonText();
     
     document.getElementById('close-sidebar')?.addEventListener('click', closeTaskSidebar);
-    document.getElementById('export-ics')?.addEventListener('click', exportToICS);
-    
-    document.getElementById('import-to-course-list')?.addEventListener('click', () => {
-      window.AppView.switchView('import');
-      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-      document.querySelector('[data-view="import"]')?.classList.add('active');
-    });
-    
-    document.getElementById('export-from-course-list')?.addEventListener('click', exportToICS);
     
     document.getElementById('toggle-timeline')?.addEventListener('click', () => {
       const panel = document.getElementById('ddl-timeline-panel');
@@ -794,7 +798,13 @@ END:VEVENT
     }).sort((a, b) => a.targetDate - b.targetDate);
 
     if (ddls.length === 0) {
-      container.innerHTML = '<p style="text-align:center;color:#999;">暂无DDL</p>';
+      container.innerHTML = `
+        <div class="timeline-empty">
+          <div class="empty-icon">📋</div>
+          <p>暂无时间轴事件</p>
+          <span>添加DDL事件后会显示在这里</span>
+        </div>
+      `;
       return;
     }
 
@@ -803,19 +813,24 @@ END:VEVENT
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
       const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       let countdownText = '';
-      if (days > 0) countdownText = `还剩 ${days} 天 ${hours} 小时`;
-      else if (hours > 0) countdownText = `还剩 ${hours} 小时`;
-      else countdownText = '即将截止！';
+      if (days > 0) countdownText = `<span class="countdown-value">${days} 天 ${hours} 小时</span>`;
+      else if (hours > 0) countdownText = `<span class="countdown-value">${hours} 小时</span>`;
+      else countdownText = `<span class="countdown-value urgent">即将截止！</span>`;
 
       const dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+      const month = ddl.targetDate.getMonth() + 1;
+      const date = ddl.targetDate.getDate();
 
       return `
         <div class="timeline-item">
           <div class="timeline-dot"></div>
           <div class="timeline-content">
             <div class="timeline-title">${ddl.name}</div>
-            <div class="timeline-time">${dayNames[ddl.dayOfWeek]} ${ddl.startTime} - ${ddl.endTime}</div>
-            <div class="timeline-countdown">${countdownText}</div>
+            <div class="timeline-time">📅 ${month}月${date}日 ${dayNames[ddl.dayOfWeek]} · ${ddl.startTime} - ${ddl.endTime}</div>
+            <div class="timeline-countdown">
+              <span class="countdown-label">⏱️ 倒计时</span>
+              ${countdownText}
+            </div>
           </div>
         </div>
       `;
