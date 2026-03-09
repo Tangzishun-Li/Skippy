@@ -1,6 +1,6 @@
 # Skippy - 课程管理助手
 
-一个基于 Electron + Vite 开发的桌面课程管理应用，采用模块化架构设计，支持课程管理、状态跟踪、日历视图、DDL时间轴等多种功能。
+一个基于 Electron + Vite 开发的桌面课程管理应用，采用模块化架构设计，支持课程管理、状态跟踪、日历视图、DDL时间轴、云端同步等多种功能。
 
 ## 功能特点
 
@@ -23,14 +23,24 @@
 - **系统通知**：提前15分钟推送上课提醒
 - **系统托盘**：最小化到托盘，后台运行，右键菜单快速操作
 
-### 界面特点
+### 云端同步 (新增)
 
-- 清新现代的 UI 设计
-- 响应式布局，适配不同屏幕尺寸
-- 毛玻璃（Glassmorphism）风格的弹窗
-- 赛博朋克风格的DDL时间轴（发光节点+呼吸动画）
-- 当天日期突出显示
-- 悬停效果和平滑动画过渡
+- **Supabase 实时同步**：多设备数据自动同步
+- **匿名登录**：无需注册即可使用
+- **邮箱登录**：支持邮箱账户登录
+- **增量同步**：高效传输，减少流量
+
+### 通知增强 (新增)
+
+- **自定义提醒时间**：5/15/30/60分钟可选
+- **通知历史**：查看历史通知记录
+- **通知声音**：可开关提示音
+
+### 邮件提醒 (新增)
+
+- **SMTP 配置**：支持 Gmail、QQ邮箱、企业邮箱
+- **DDL 邮件提醒**：截止前自动发送邮件提醒
+- **课程提醒邮件**：课程开始前发送邮件通知
 
 ## 项目结构
 
@@ -44,7 +54,11 @@ Skippy/
 │   │       ├── windowManager.js  # 窗口管理模块
 │   │       ├── trayManager.js    # 系统托盘模块
 │   │       ├── ipcHandlers.js    # IPC 通信处理模块
-│   │       └── preloadBridge.js # 预加载桥接模块
+│   │       ├── database.js       # SQLite 数据库模块
+│   │       ├── schema.sql        # 数据库 Schema
+│   │       ├── sync.js           # 云端同步模块
+│   │       ├── notification.js   # 通知模块
+│   │       └── mailer.js        # 邮件发送模块
 │   │
 │   └── renderer/                 # 前端渲染进程代码
 │       ├── index.html           # 主页面
@@ -56,6 +70,11 @@ Skippy/
 │       │       └── ...
 │       └── js/
 │           ├── main.js          # 主入口脚本
+│           ├── utils/
+│           │   ├── storage.js   # 数据存储工具
+│           │   └── sync.js     # 同步工具
+│           ├── modules/
+│           │   └── notification-settings.js  # 通知设置
 │           └── core/
 │               ├── calendar.js   # 日历核心逻辑
 │               ├── course.js    # 课程管理
@@ -64,15 +83,14 @@ Skippy/
 ├── package.json                  # 项目配置
 ├── vite.config.js                # Vite 配置
 ├── .gitignore                    # Git 忽略配置
-├── README.md                     # 本文档
-└── MODULES.md                    # 模块化架构详细文档
+└── README.md                     # 本文档
 ```
 
 ## 快速开始
 
 ### 前提条件
 
-确保您的电脑已安装 Node.js 环境。如果未安装，请先下载并安装：
+确保您的电脑已安装 Node.js 环境（推荐 v20+）：
 - [Node.js 官方下载](https://nodejs.org/zh-cn/download/)
 
 ### 安装依赖
@@ -128,6 +146,26 @@ npm run electron
 
 应用会在课程开始前15分钟推送系统通知提醒
 
+### 7. 云端同步配置
+
+1. 点击导航栏 ⚙️ 设置 按钮
+2. 在"☁️ 云端同步"部分填写 Supabase 配置：
+   - URL: 你的 Supabase 项目 URL
+   - Anon Key: 你的 Supabase Anon Key
+3. 点击"保存并连接"
+4. 首次使用会自动创建匿名账户
+
+### 8. 邮件提醒配置
+
+1. 在设置页面"📧 邮件提醒"部分
+2. 填写 SMTP 服务器信息：
+   - SMTP 服务器：如 smtp.gmail.com
+   - 端口：587
+   - 邮箱账号：your@email.com
+   - 密码：应用专用密码
+3. 填写收件人（多个用逗号分隔）
+4. 点击"测试邮件"验证配置
+
 ## 打包应用
 
 ```bash
@@ -144,11 +182,21 @@ npm run build:linux
 ## 技术栈
 
 - **前端**：HTML5 + CSS3 + JavaScript (ES6+)
-- **框架**：Electron 25.x
+- **框架**：Electron 40.x
 - **构建工具**：Vite 4.x
-- **数据存储**：localStorage
+- **数据库**：sql.js (SQLite)
+- **云端同步**：Supabase
+- **邮件**：Nodemailer
 
 ## 更新日志
+
+### v1.2.0
+
+- 新增 SQLite 数据库存储（替代 localStorage）
+- 新增云端同步功能（Supabase）
+- 新增增强通知系统
+- 新增邮件提醒功能
+- 新增设置界面
 
 ### v1.1.0
 
@@ -167,6 +215,20 @@ npm run build:linux
 - 实现状态管理和问题记录
 - 实现日历视图
 - 实现系统托盘功能
+
+## 常见问题
+
+### Q: 云端同步如何配置？
+
+A: 需要先在 [Supabase](https://supabase.com) 创建免费项目，获取 URL 和 Anon Key，然后在应用设置中配置。
+
+### Q: 邮件发送失败怎么办？
+
+A: 确保使用应用专用密码（非邮箱登录密码），Gmail 需要开启"低安全性应用访问"或使用应用专用密码。
+
+### Q: 数据库文件在哪里？
+
+A: 数据库文件位于 `~/Library/Application Support/Skippy/skippy.db`
 
 ## 许可证
 
