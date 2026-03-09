@@ -70,15 +70,51 @@
     }
   }
 
-  function initApp() {
-    window.AppStorage.loadCourses();
-    window.Calendar.render();
-    window.CourseManager.renderCourses();
-    window.Calendar.initCalendarEvents();
-    window.Timeline.initEvents();
-    window.Problem.initEvents();
-    window.ImportModule.initEvents();
-    bindEventListeners();
+  async function initApp() {
+    console.log('[Main] Starting app init...');
+    console.log('[Main] electronAPI exists:', !!window.electronAPI);
+    
+    try {
+      console.log('[Main] Initializing storage...');
+      await window.AppStorage.init();
+      console.log('[Main] Storage initialized');
+      
+      if (window.Calendar) {
+        window.Calendar.render();
+        console.log('[Main] Calendar rendered');
+      }
+      
+      if (window.CourseManager) {
+        window.CourseManager.renderCourses();
+        console.log('[Main] Courses rendered');
+      }
+      
+      if (window.Calendar && window.Calendar.initCalendarEvents) {
+        window.Calendar.initCalendarEvents();
+        console.log('[Main] Calendar events initialized');
+      }
+      
+      if (window.Timeline && window.Timeline.initEvents) {
+        window.Timeline.initEvents();
+        console.log('[Main] Timeline events initialized');
+      }
+      
+      if (window.Problem && window.Problem.initEvents) {
+        window.Problem.initEvents();
+        console.log('[Main] Problem events initialized');
+      }
+      
+      if (window.ImportModule && window.ImportModule.initEvents) {
+        window.ImportModule.initEvents();
+        console.log('[Main] Import events initialized');
+      }
+      
+      bindEventListeners();
+      console.log('[Main] App initialized successfully');
+    } catch (e) {
+      console.error('[Main] Init error:', e);
+      console.error(e.stack);
+    }
   }
 
   if (document.readyState === 'loading') {

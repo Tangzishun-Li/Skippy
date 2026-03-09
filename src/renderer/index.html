@@ -14,6 +14,7 @@
       <button class="nav-btn active" data-view="calendar">日历视图</button>
       <button class="nav-btn" data-view="course-list">课程列表</button>
       <button class="nav-btn" id="toggle-timeline">时间轴</button>
+      <button class="nav-btn" id="open-settings">⚙️ 设置</button>
     </div>
   </nav>
   
@@ -186,6 +187,94 @@
         <button id="sidebar-export-btn" class="glow-btn" style="margin-top: 20px;">📤 导出为ICS文件</button>
       </div>
     </div>
+
+    <!-- 设置侧边栏 -->
+    <div id="settings-sidebar" class="task-sidebar hidden">
+      <div class="sidebar-header">
+        <h3>⚙️ 设置</h3>
+        <button id="close-settings-sidebar">×</button>
+      </div>
+      <div class="sidebar-content">
+        <div class="settings-section">
+          <h4>🔔 通知设置</h4>
+          <div class="setting-item">
+            <label>
+              <input type="checkbox" id="notification-enabled" checked>
+              启用桌面通知
+            </label>
+          </div>
+          <div class="setting-item">
+            <label>提前提醒时间</label>
+            <select id="notification-advance">
+              <option value="5">5 分钟</option>
+              <option value="15" selected>15 分钟</option>
+              <option value="30">30 分钟</option>
+              <option value="60">1 小时</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <label>
+              <input type="checkbox" id="notification-sound" checked>
+              启用通知声音
+            </label>
+          </div>
+          <button id="test-notification" class="glow-btn" style="margin-top: 10px;">测试通知</button>
+        </div>
+
+        <div class="settings-section">
+          <h4>📧 邮件提醒</h4>
+          <div class="setting-item">
+            <label>
+              <input type="checkbox" id="mail-enabled">
+              启用邮件提醒
+            </label>
+          </div>
+          <div class="setting-item">
+            <label>SMTP 服务器</label>
+            <input type="text" id="mail-host" placeholder="smtp.gmail.com">
+          </div>
+          <div class="setting-item">
+            <label>端口</label>
+            <input type="number" id="mail-port" value="587">
+          </div>
+          <div class="setting-item">
+            <label>邮箱账号</label>
+            <input type="email" id="mail-user" placeholder="your@email.com">
+          </div>
+          <div class="setting-item">
+            <label>邮箱密码/授权码</label>
+            <input type="password" id="mail-pass" placeholder="••••••••">
+          </div>
+          <div class="setting-item">
+            <label>收件人（多个用逗号分隔）</label>
+            <input type="text" id="mail-recipients" placeholder="test@example.com">
+          </div>
+          <button id="test-mail" class="glow-btn" style="margin-top: 10px;">测试邮件</button>
+        </div>
+
+        <div class="settings-section">
+          <h4>☁️ 云端同步</h4>
+          <div class="setting-item">
+            <label>
+              <input type="checkbox" id="sync-enabled">
+              启用云端同步
+            </label>
+          </div>
+          <div class="setting-item">
+            <label>Supabase URL</label>
+            <input type="text" id="sync-url" placeholder="https://xxx.supabase.co">
+          </div>
+          <div class="setting-item">
+            <label>Supabase Anon Key</label>
+            <input type="password" id="sync-key" placeholder="••••••••">
+          </div>
+          <div id="sync-status" class="sync-status">
+            <span class="status-disconnected">未连接</span>
+          </div>
+          <button id="save-sync" class="glow-btn" style="margin-top: 10px;">保存并连接</button>
+        </div>
+      </div>
+    </div>
     
     <!-- 课程列表视图 -->
     <div class="view" id="courseListView" style="display: none;">
@@ -343,6 +432,8 @@
   <script src="js/core/calendar.js"></script>
   <script src="js/core/course.js"></script>
   <script src="js/modules/course-settings.js"></script>
+  <script src="js/utils/sync.js"></script>
+  <script src="js/modules/notification-settings.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

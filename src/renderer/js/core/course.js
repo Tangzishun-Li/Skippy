@@ -132,7 +132,7 @@
 
       courseElement.innerHTML = `
         <div class="course-header">
-          <h3>${course.name} <span class="problem-tag" style="display: ${course.lessons.some(l => l.status === 'problematic') ? 'inline-block' : 'none'}">有问题</span></h3>
+          <h3>${course.name} <span class="problem-tag" style="display: ${(course.lessons && course.lessons.some) && course.lessons.some(l => l.status === 'problematic') ? 'inline-block' : 'none'}">有问题</span></h3>
           <button class="delete-course-btn" data-course-id="${course.id}">删除</button>
         </div>
         <p>时间：${dayName} ${course.startTime} - ${course.endTime}</p>
@@ -140,7 +140,7 @@
         <p>频率：${getFrequencyText(course.frequency || 'weekly')}</p>
         <p>总次数：${course.repeatWeeks || course.repeatCount}次</p>
         <div class="lessons-container">
-          ${course.lessons.map((lesson, index) => {
+          ${(course.lessons || []).map((lesson, index) => {
             const isCurrentWeek = lesson.week === currentWeek;
             return `
               <div class="lesson-item lesson-${lesson.status} ${isCurrentWeek ? 'current-week' : ''}" data-course-id="${course.id}" data-lesson-index="${index}">

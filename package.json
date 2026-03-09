@@ -33,11 +33,15 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },
@@ -64,9 +68,14 @@
   "devDependencies": {
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
-    "electron": "^25.0.0",
+    "electron": "^40.8.0",
     "electron-builder": "^24.13.3",
     "vite": "^5.0.8",
     "wait-on": "^7.2.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.98.0",
+    "nodemailer": "^8.0.1",
+    "sql.js": "^1.14.1"
   }
 }

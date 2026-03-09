@@ -431,7 +431,7 @@ function renderCourses() {
     
     courseElement.innerHTML = `
       <div class="course-header">
-        <h3>${course.name} <span class="problem-tag" style="display: ${course.lessons.some(l => l.status === 'problematic') ? 'inline-block' : 'none'}">有问题</span></h3>
+        <h3>${course.name} <span class="problem-tag" style="display: ${(course.lessons && course.lessons.some) && course.lessons.some(l => l.status === 'problematic') ? 'inline-block' : 'none'}">有问题</span></h3>
         <button class="delete-course-btn" data-course-id="${course.id}">删除</button>
       </div>
       <p>时间：${dayName} ${course.startTime} - ${course.endTime}</p>
@@ -439,7 +439,7 @@ function renderCourses() {
       <p>频率：${getFrequencyText(course.frequency || 'weekly')}</p>
       <p>总次数：${course.repeatWeeks || course.repeatCount}次</p>
       <div class="lessons-container">
-        ${course.lessons.map((lesson, index) => {
+        ${(course.lessons || []).map((lesson, index) => {
           const isCurrentWeek = lesson.week === currentWeek;
           return `
             <div class="lesson-item lesson-${lesson.status} ${isCurrentWeek ? 'current-week' : ''}" data-course-id="${course.id}" data-lesson-index="${index}">
@@ -787,7 +787,8 @@ function getCoursesForDate(date) {
     }
     
     // 遍历课程的每一节课
-    course.lessons.forEach((lesson, index) => {
+    if (course.lessons && Array.isArray(course.lessons)) {
+      course.lessons.forEach((lesson, index) => {
       // 检查课程是否有具体日期
       if (lesson.date) {
         const lessonDate = new Date(lesson.date);
@@ -833,7 +834,8 @@ function getCoursesForDate(date) {
           expectedLessonDate.setHours(0, 0, 0, 0);
           
           // 只有当预期日期与目标日期匹配时才显示课程
-          if (expectedLessonDate.getTime() === targetDate.getTime()) {
+          // 同时需要检查该日期不是节假日
+          if (expectedLessonDate.getTime() === targetDate.getTime() && !isHoliday(targetDate)) {
             result.push({
               name: course.name,
               status: lesson.status,

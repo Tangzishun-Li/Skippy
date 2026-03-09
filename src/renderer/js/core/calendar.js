@@ -21,7 +21,9 @@
   }
 
   function getCoursesForDate(date) {
-    const courses = window.AppStorage.getCoursesData();
+    const courses = window.AppStorage ? window.AppStorage.getCoursesData() : [];
+    if (!courses || !Array.isArray(courses)) return [];
+    
     const result = [];
     const targetDate = new Date(date);
     targetDate.setHours(0, 0, 0, 0);
@@ -38,6 +40,8 @@
         });
       }
 
+      if (!course.lessons || !Array.isArray(course.lessons)) return;
+      
       course.lessons.forEach((lesson, index) => {
         if (lesson.date) {
           const lessonDate = new Date(lesson.date);
@@ -298,7 +302,8 @@
               course.startTime = newStartTime;
               course.endTime = newEndTime;
               
-              window.AppStorage.saveCoursesData(courses);
+              window.AppStorage.setCoursesData(courses);
+              window.AppStorage.saveCourses();
               renderCalendar();
             }
           } catch (err) {
@@ -481,6 +486,88 @@
         btn.textContent = panel.classList.contains('collapsed') ? '+' : '−';
       }
     });
+
+    document.getElementById('open-settings')?.addEventListener('click', () => {
+      const sidebar = document.getElementById('settings-sidebar');
+      if (sidebar) {
+        sidebar.classList.remove('hidden');
+        setTimeout(() => sidebar.classList.add('show'), 10);
+        if (typeof loadSettingsData === 'function') {
+          loadSettingsData().catch(e => console.error('[Calendar] Load settings error:', e));
+        }
+      }
+    });
+
+    document.getElementById('close-settings-sidebar')?.addEventListener('click', () => {
+      const sidebar = document.getElementById('settings-sidebar');
+      if (sidebar) {
+        sidebar.classList.remove('show');
+        setTimeout(() => sidebar.classList.add('hidden'), 300);
+      }
+    });
+
+    document.getElementById('notification-enabled')?.addEventListener('change', async (e) => {
+      if (window.NotificationSettings && window.NotificationSettings.saveNotificationSettings) {
+        await window.NotificationSettings.saveNotificationSettings({ enabled: e.target.checked });
+      }
+    });
+
+    document.getElementById('notification-advance')?.addEventListener('change', async (e) => {
+      if (window.NotificationSettings && window.NotificationSettings.saveNotificationSettings) {
+        await window.NotificationSettings.saveNotificationSettings({ advanceMinutes: parseInt(e.target.value) });
+      }
+    });
+
+    document.getElementById('notification-sound')?.addEventListener('change', async (e) => {
+      if (window.NotificationSettings && window.NotificationSettings.saveNotificationSettings) {
+        await window.NotificationSettings.saveNotificationSettings({ sound: e.target.checked });
+      }
+    });
+
+    document.getElementById('test-notification')?.addEventListener('click', async () => {
+      if (window.NotificationSettings && window.NotificationSettings.showTestNotification) {
+        await window.NotificationSettings.showTestNotification();
+      }
+    });
+
+    document.getElementById('mail-enabled')?.addEventListener('change', async (e) => {
+      if (window.NotificationSettings && window.NotificationSettings.saveMailSettings) {
+        window.NotificationSettings.saveMailSettings({ enabled: e.target.checked });
+      }
+    });
+
+    document.getElementById('test-mail')?.addEventListener('click', async () => {
+      const recipients = document.getElementById('mail-recipients').value;
+      if (!recipients) {
+        if (window.Toast) window.Toast.show('请先填写收件人');
+        return;
+      }
+      if (window.NotificationSettings && window.NotificationSettings.sendTestMail) {
+        const result = await window.NotificationSettings.sendTestMail(recipients);
+        if (result.success) {
+          if (window.Toast) window.Toast.show('测试邮件已发送');
+        } else {
+          if (window.Toast) window.Toast.show('发送失败: ' + result.error);
+        }
+      }
+    });
+
+    document.getElementById('save-sync')?.addEventListener('click', async () => {
+      const url = document.getElementById('sync-url').value;
+      const key = document.getElementById('sync-key').value;
+      const enabled = document.getElementById('sync-enabled').checked;
+
+      if (url && key) {
+        if (window.SyncManager) {
+          await window.SyncManager.setup(url, key);
+          await window.SyncManager.enableSync(enabled);
+          if (window.Toast) window.Toast.show('同步配置已保存');
+          updateSyncStatus();
+        }
+      } else {
+        if (window.Toast) window.Toast.show('请填写 Supabase 配置');
+      }
+    });
     
     document.getElementById('prevPeriod').addEventListener('click', () => {
       if (currentView === 'week') {
@@ -509,6 +596,57 @@
         renderCalendar();
       });
     });
+  }
+
+  async function loadSettingsData() {
+    if (!window.NotificationSettings || !window.NotificationSettings.loadSettings) {
+      console.warn('[Calendar] NotificationSettings not available');
+      return;
+    }
+    
+    const settings = await window.NotificationSettings.loadSettings();
+    
+    if (settings.notification) {
+      const enabledEl = document.getElementById('notification-enabled');
+      const advanceEl = document.getElementById('notification-advance');
+      const soundEl = document.getElementById('notification-sound');
+      
+      if (enabledEl) enabledEl.checked = settings.notification.enabled;
+      if (advanceEl) advanceEl.value = settings.notification.advanceMinutes || 15;
+      if (soundEl) soundEl.checked = settings.notification.sound;
+    }
+    
+    if (settings.mail) {
+      const mailEnabledEl = document.getElementById('mail-enabled');
+      const hostEl = document.getElementById('mail-host');
+      const portEl = document.getElementById('mail-port');
+      const userEl = document.getElementById('mail-user');
+      const recipientsEl = document.getElementById('mail-recipients');
+      
+      if (mailEnabledEl) mailEnabledEl.checked = settings.mail.enabled;
+      if (hostEl) hostEl.value = settings.mail.host || '';
+      if (portEl) portEl.value = settings.mail.port || 587;
+      if (userEl) userEl.value = settings.mail.user || '';
+      if (recipientsEl) recipientsEl.value = settings.mail.recipients ? settings.mail.recipients.join(', ') : '';
+    }
+    
+    await updateSyncStatus();
+  }
+
+  async function updateSyncStatus() {
+    if (!window.SyncManager) return;
+    
+    const status = await window.SyncManager.getStatus();
+    const statusEl = document.getElementById('sync-status');
+    if (statusEl) {
+      if (status.signedIn) {
+        statusEl.innerHTML = `<span class="status-connected">✓ 已连接: ${status.user?.email || '匿名'}</span>`;
+      } else if (status.configured) {
+        statusEl.innerHTML = `<span class="status-disconnected">⚠️ 已配置但未登录</span>`;
+      } else {
+        statusEl.innerHTML = `<span class="status-disconnected">未连接</span>`;
+      }
+    }
   }
 
   function updatePeriodButtonText() {
@@ -615,28 +753,40 @@
   }
 
   function checkUpcomingCourses() {
-    setInterval(() => {
-      const now = new Date();
-      const currentHour = now.getHours();
-      const currentMinute = now.getMinutes();
-      
-      const courses = window.AppStorage.getCoursesData();
-      const today = now.getDay();
+    try {
+      setInterval(() => {
+        try {
+          const now = new Date();
+          const currentHour = now.getHours();
+          const currentMinute = now.getMinutes();
+          
+          if (!window.AppStorage || !window.AppStorage.getCoursesData) return;
+          
+          const courses = window.AppStorage.getCoursesData();
+          if (!courses || !Array.isArray(courses)) return;
+          
+          const today = now.getDay();
 
-      courses.forEach(course => {
-        if (course.dayOfWeek === today && course.startTime) {
-          const [startHour, startMinute] = course.startTime.split(':').map(Number);
-          
-          const minutesLeft = (startHour * 60 + startMinute) - (currentHour * 60 + currentMinute);
-          
-          if (minutesLeft === 15) {
-            new Notification('Tody 提醒：准备上课啦！', {
-              body: `你的【${course.name}】将在 15 分钟后开始。\n地点：${course.location || '未知'}`
-            });
-          }
+          courses.forEach(course => {
+            if (course.dayOfWeek === today && course.startTime) {
+              const [startHour, startMinute] = course.startTime.split(':').map(Number);
+              
+              const minutesLeft = (startHour * 60 + startMinute) - (currentHour * 60 + currentMinute);
+              
+              if (minutesLeft === 15) {
+                new Notification('Tody 提醒：准备上课啦！', {
+                  body: `你的【${course.name}】将在 15 分钟后开始。\n地点：${course.location || '未知'}`
+                });
+              }
+            }
+          });
+        } catch (e) {
+          console.error('[Calendar] Check courses error:', e);
         }
-      });
-    }, 60000);
+      }, 60000);
+    } catch (e) {
+      console.error('[Calendar] Init checkUpcomingCourses error:', e);
+    }
   }
 
   function exportToICS() {
@@ -758,7 +908,8 @@ END:VEVENT
       };
 
       courses.push(newCourse);
-      window.AppStorage.saveCoursesData(courses);
+      window.AppStorage.setCoursesData(courses);
+      window.AppStorage.saveCourses();
 
       modal.classList.remove('show');
       setTimeout(() => {
