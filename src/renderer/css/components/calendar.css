@@ -1495,6 +1495,14 @@ html, body {
   text-align: center;
 }
 
+.main-calendar .calendar-toolbar .current-date-display {
+  font-size: 14px;
+  color: #5f6368;
+  font-weight: 500;
+  margin-left: auto;
+  padding: 0 16px;
+}
+
 /* 缩放功能 - 作用于整个应用容器 */
 #calendarApp {
   transform-origin: top left;

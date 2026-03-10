@@ -374,13 +374,36 @@
 
   function handleDatesSet(dateInfo) {
     currentDate = dateInfo.view.currentStart;
-    currentView = dateInfo.view.type === 'timeGridWeek' ? 'week' : 'month';
+    currentView = dateInfo.view.type === 'timeGridWeek' ? 'week' : 
+                  dateInfo.view.type === 'timeGridDay' ? 'day' : 'month';
     
     if (document.getElementById('mini-calendar')) {
       renderMiniCalendar(currentDate);
     }
     
     updatePeriodDisplay();
+    
+    const currentDateDisplay = document.getElementById('current-date-display');
+    if (currentDateDisplay && calendarInstance) {
+      const date = calendarInstance.getDate();
+      const view = calendarInstance.view.type;
+      
+      if (view === 'timeGridWeek') {
+        const start = calendarInstance.view.currentStart;
+        const end = calendarInstance.view.currentEnd;
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        endDate.setDate(endDate.getDate() - 1);
+        
+        const options = { month: 'short', day: 'numeric' };
+        currentDateDisplay.textContent = `${startDate.toLocaleDateString('zh-CN', options)} - ${endDate.toLocaleDateString('zh-CN', options)}`;
+      } else if (view === 'timeGridDay') {
+        const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+        currentDateDisplay.textContent = date.toLocaleDateString('zh-CN', options);
+      } else {
+        currentDateDisplay.textContent = '';
+      }
+    }
   }
 
   function updatePeriodDisplay() {
@@ -507,6 +530,7 @@
     const zoomInBtn = document.getElementById('zoom-in');
     const zoomOutBtn = document.getElementById('zoom-out');
     const zoomLevelEl = document.getElementById('zoom-level');
+    const currentDateDisplay = document.getElementById('current-date-display');
 
     if (!todayBtn || !prevBtn || !nextBtn || !periodEl) return;
 
@@ -538,13 +562,43 @@
         const view = btn.dataset.view;
         if (view === 'month') {
           calendarInstance.changeView('dayGridMonth');
+          prevBtn.textContent = '‹ 上月';
+          nextBtn.textContent = '下月 ›';
         } else if (view === 'week') {
           calendarInstance.changeView('timeGridWeek');
+          prevBtn.textContent = '‹ 上周';
+          nextBtn.textContent = '下周 ›';
         } else if (view === 'day') {
           calendarInstance.changeView('timeGridDay');
+          prevBtn.textContent = '‹ 上一天';
+          nextBtn.textContent = '下一天 ›';
         }
+        updateCurrentDateDisplay();
       };
     });
+
+    function updateCurrentDateDisplay() {
+      if (!calendarInstance || !currentDateDisplay) return;
+      
+      const date = calendarInstance.getDate();
+      const view = calendarInstance.view.type;
+      
+      if (view === 'dayGridMonth') {
+        currentDateDisplay.textContent = '';
+      } else if (view === 'timeGridWeek') {
+        const start = calendarInstance.view.currentStart;
+        const end = calendarInstance.view.currentEnd;
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        endDate.setDate(endDate.getDate() - 1);
+        
+        const options = { month: 'short', day: 'numeric' };
+        currentDateDisplay.textContent = `${startDate.toLocaleDateString('zh-CN', options)} - ${endDate.toLocaleDateString('zh-CN', options)}`;
+      } else if (view === 'timeGridDay') {
+        const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+        currentDateDisplay.textContent = date.toLocaleDateString('zh-CN', options);
+      }
+    }
 
     if (zoomInBtn && zoomOutBtn && zoomLevelEl) {
       zoomInBtn.onclick = function() {
@@ -565,7 +619,6 @@
         const calendarApp = document.getElementById('calendarApp');
         if (calendarApp) {
           calendarApp.style.transform = `scale(${currentZoom / 100})`;
-          // 调整容器高度以适应缩放
           const scale = currentZoom / 100;
           calendarApp.style.height = `${100 / scale}%`;
         }
