@@ -27,6 +27,7 @@ app.whenReady().then(async () => {
   
   windowManager.createMainWindow()
   windowManager.createFloatingBallWindow()
+  windowManager.registerWindowIpcHandlers()
   
   trayManager.createTray(windowManager)
   

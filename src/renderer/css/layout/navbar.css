@@ -3,12 +3,12 @@
   justify-content: space-between;
   align-items: center;
   background-color: transparent;
-  padding: 20px 30px;
-  margin-bottom: 10px;
+  padding: 12px 20px;
+  margin-bottom: 0;
 }
 
 .navbar-brand {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--primary-color);
   letter-spacing: -0.5px;
@@ -16,10 +16,10 @@
 
 .navbar-nav {
   display: flex;
-  gap: 15px;
+  gap: 8px;
   background: white;
-  padding: 8px;
-  border-radius: 50px;
+  padding: 6px;
+  border-radius: 8px;
   box-shadow: var(--shadow-sm);
 }
 
@@ -27,9 +27,9 @@
   background-color: transparent;
   color: var(--text-muted);
   border: none;
-  border-radius: 40px;
-  padding: 8px 20px;
-  font-size: 14px;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -43,7 +43,7 @@
 .nav-btn.active {
   background-color: var(--primary-color);
   color: white;
-  box-shadow: 0 4px 6px rgba(94, 114, 228, 0.3);
+  box-shadow: 0 2px 4px rgba(94, 114, 228, 0.3);
 }
 
 @media (max-width: 768px) {

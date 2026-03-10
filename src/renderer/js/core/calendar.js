@@ -3,6 +3,13 @@
 
   let currentDate = new Date();
   let currentView = 'month';
+  let calendarInstance = null;
+  let miniCalendarInstance = null;
+  let showPopup = false;
+  let popupPos = { x: 0, y: 0 };
+  let draftEvent = null;
+  let eventTitle = '';
+  let currentZoom = 100;
 
   function setCurrentDate(date) {
     currentDate = date;
@@ -96,7 +103,561 @@
     return result;
   }
 
+  async function loadEventsFromDatabase() {
+    try {
+      if (window.electronAPI?.db?.getEvents) {
+        const dbEvents = await window.electronAPI.db.getEvents();
+        if (dbEvents && Array.isArray(dbEvents) && dbEvents.length > 0) {
+          return dbEvents.map(event => ({
+            id: event.id,
+            title: event.title,
+            start: event.start,
+            end: event.end,
+            allDay: event.allDay,
+            backgroundColor: event.backgroundColor || '#4285F4',
+            borderColor: event.borderColor || '#4285F4'
+          }));
+        }
+      }
+    } catch (err) {
+      console.error('[Calendar] Failed to load events from database:', err);
+    }
+    return [];
+  }
+
+  function getEventsForFullCalendar() {
+    return loadEventsFromDatabase().then(dbEvents => {
+      if (dbEvents && dbEvents.length > 0) {
+        return dbEvents;
+      }
+      
+      const courses = window.AppStorage ? window.AppStorage.getCoursesData() : [];
+      if (!courses || !Array.isArray(courses)) return [];
+      
+      const events = [];
+      const now = new Date();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      courses.forEach(course => {
+        if (!course.startTime || !course.endTime) return;
+        
+        const [startHour, startMinute] = course.startTime.split(':').map(Number);
+        const [endHour, endMinute] = course.endTime.split(':').map(Number);
+
+        const dayOfWeek = course.dayOfWeek !== undefined ? course.dayOfWeek : now.getDay();
+        
+        for (let week = 0; week < 16; week++) {
+          const lessonDate = new Date(today);
+          lessonDate.setDate(today.getDate() + (dayOfWeek - today.getDay()) + (week * 7));
+          lessonDate.setHours(startHour, startMinute, 0);
+
+          const endDate = new Date(lessonDate);
+          endDate.setHours(endHour, endMinute, 0);
+
+          if (lessonDate < now) continue;
+
+          events.push({
+            id: `${course.id}-${week}`,
+            title: course.name,
+            start: lessonDate.toISOString(),
+            end: endDate.toISOString(),
+            backgroundColor: course.status === 'ddl' ? '#ea4335' : '#4285F4',
+            borderColor: course.status === 'ddl' ? '#ea4335' : '#4285F4',
+            extendedProps: {
+              course: course,
+              status: course.status
+            }
+          });
+        }
+      });
+
+      return events;
+    });
+  }
+
+  async function initFullCalendar() {
+    const calendarEl = document.getElementById('calendar');
+    if (!calendarEl || typeof FullCalendar === 'undefined') {
+      console.warn('[Calendar] FullCalendar not available');
+      renderCalendar();
+      return;
+    }
+
+    const calendarHeader = document.querySelector('.calendar-header');
+    if (calendarHeader) {
+      calendarHeader.style.display = 'none';
+    }
+
+    const events = await getEventsForFullCalendar();
+
+    calendarInstance = new FullCalendar.Calendar(calendarEl, {
+      initialView: currentView === 'week' ? 'timeGridWeek' : 'dayGridMonth',
+      locale: 'zh-cn',
+      headerToolbar: false,
+      buttonText: {
+        today: '今天',
+        month: '月',
+        week: '周',
+        day: '日'
+      },
+      editable: true,
+      selectable: true,
+      selectMirror: true,
+      dayMaxEvents: true,
+      slotMinTime: '06:00:00',
+      slotMaxTime: '23:00:00',
+      allDaySlot: false,
+      events: events,
+      select: handleDateSelect,
+      unselect: handleUnselect,
+      eventClick: handleEventClick,
+      eventDrop: handleEventDrop,
+      eventResize: handleEventResize,
+      datesSet: handleDatesSet,
+      height: '100%',
+      contentHeight: '100%',
+      scrollTime: '08:00:00',
+      fixedWeekCount: false,
+      showNonCurrentDates: true
+    });
+
+    calendarInstance.render();
+
+    initMiniCalendar();
+    setupCalendarToolbar();
+    setupSidebarResize();
+  }
+
+  function initMiniCalendar() {
+    const miniCalendarEl = document.getElementById('mini-calendar');
+    if (!miniCalendarEl) {
+      console.warn('[Calendar] Mini calendar element not found');
+      return;
+    }
+
+    renderMiniCalendar(new Date());
+  }
+
+  function renderMiniCalendar(date) {
+    const miniCalendarEl = document.getElementById('mini-calendar');
+    if (!miniCalendarEl) return;
+
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    
+    const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+    const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+    
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDay = firstDay.getDay();
+    const totalDays = lastDay.getDate();
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let html = `
+      <div class="mini-calendar">
+        <div class="mini-calendar-header">
+          <button class="mini-calendar-prev" onclick="window.Calendar.navigateMiniCalendar(-1)">‹</button>
+          <span class="mini-calendar-title">${year}年 ${monthNames[month]}</span>
+          <button class="mini-calendar-next" onclick="window.Calendar.navigateMiniCalendar(1)">›</button>
+        </div>
+        <div class="mini-calendar-weekdays">
+          ${weekDays.map(d => `<span>${d}</span>`).join('')}
+        </div>
+        <div class="mini-calendar-days">
+    `;
+
+    for (let i = 0; i < startDay; i++) {
+      html += '<span class="mini-calendar-day empty"></span>';
+    }
+
+    for (let day = 1; day <= totalDays; day++) {
+      const currentDate = new Date(year, month, day);
+      currentDate.setHours(0, 0, 0, 0);
+      
+      let classes = 'mini-calendar-day';
+      if (currentDate.getTime() === today.getTime()) {
+        classes += ' today';
+      }
+      
+      html += `<span class="${classes}" data-date="${year}-${month + 1}-${day}" onclick="window.Calendar.selectMiniCalendarDate('${year}-${month + 1}-${day}')">${day}</span>`;
+    }
+
+    html += `
+        </div>
+      </div>
+    `;
+
+    miniCalendarEl.innerHTML = html;
+  }
+
+  function navigateMiniCalendar(delta) {
+    const date = new Date(currentDate);
+    date.setMonth(date.getMonth() + delta);
+    currentDate = date;
+    renderMiniCalendar(date);
+    if (calendarInstance) {
+      calendarInstance.gotoDate(date);
+    }
+  }
+
+  function selectMiniCalendarDate(dateStr) {
+    const date = new Date(dateStr);
+    currentDate = date;
+    if (calendarInstance) {
+      calendarInstance.gotoDate(date);
+    }
+    renderMiniCalendar(date);
+  }
+
+  function handleMiniCalendarChange(date) {
+    currentDate = date;
+    if (calendarInstance) {
+      calendarInstance.gotoDate(date);
+    }
+    if (miniCalendarInstance) {
+      miniCalendarInstance.value = date;
+    }
+  }
+
+  function handleDatesSet(dateInfo) {
+    currentDate = dateInfo.view.currentStart;
+    currentView = dateInfo.view.type === 'timeGridWeek' ? 'week' : 
+                  dateInfo.view.type === 'timeGridDay' ? 'day' : 'month';
+    
+    if (miniCalendarInstance) {
+      miniCalendarInstance.value = dateInfo.view.currentStart;
+    }
+    
+    updatePeriodDisplay();
+  }
+
+  function handleDateSelect(selectInfo) {
+    const mouseX = selectInfo.jsEvent.clientX;
+    const mouseY = selectInfo.jsEvent.clientY;
+
+    const popupWidth = 300;
+    const popupHeight = 180;
+    const finalX = mouseX + popupWidth > window.innerWidth ? window.innerWidth - popupWidth - 20 : mouseX;
+    const finalY = mouseY + popupHeight > window.innerHeight ? window.innerHeight - popupHeight - 20 : mouseY;
+
+    popupPos = { x: finalX, y: finalY };
+    draftEvent = selectInfo;
+    eventTitle = '';
+    showPopup = true;
+    
+    renderPopup();
+  }
+
+  function handleUnselect() {
+    showPopup = false;
+    removePopup();
+  }
+
+  function handleEventClick(clickInfo) {
+    const newTitle = prompt('修改日程标题:', clickInfo.event.title);
+    if (newTitle) {
+      clickInfo.event.setProp('title', newTitle);
+    }
+  }
+
+  function handleEventDrop(dropInfo) {
+    console.log('[Calendar] Event dropped:', dropInfo.event.title, dropInfo.event.startStr);
+  }
+
+  function handleEventResize(resizeInfo) {
+    console.log('[Calendar] Event resized:', resizeInfo.event.title);
+  }
+
+  function handleDatesSet(dateInfo) {
+    currentDate = dateInfo.view.currentStart;
+    currentView = dateInfo.view.type === 'timeGridWeek' ? 'week' : 'month';
+    
+    if (document.getElementById('mini-calendar')) {
+      renderMiniCalendar(currentDate);
+    }
+    
+    updatePeriodDisplay();
+  }
+
+  function updatePeriodDisplay() {
+    const currentPeriodEl = document.getElementById('currentPeriod');
+    if (!currentPeriodEl) return;
+
+    const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+    
+    if (currentView === 'week') {
+      const weekStart = new Date(currentDate);
+      weekStart.setDate(currentDate.getDate() - currentDate.getDay());
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      currentPeriodEl.textContent = `${weekStart.getMonth() + 1}月 ${weekStart.getDate()}日 - ${weekEnd.getMonth() + 1}月 ${weekEnd.getDate()}日`;
+    } else {
+      currentPeriodEl.textContent = `${currentDate.getFullYear()}年 ${monthNames[currentDate.getMonth()]}`;
+    }
+  }
+
+  function renderPopup() {
+    removePopup();
+
+    if (!showPopup || !draftEvent) return;
+
+    const popup = document.createElement('div');
+    popup.id = 'event-popup-card';
+    popup.className = 'event-popup-card';
+    popup.style.position = 'absolute';
+    popup.style.left = `${popupPos.x}px`;
+    popup.style.top = `${popupPos.y}px`;
+    popup.style.zIndex = '10000';
+
+    const startDate = draftEvent.startStr ? new Date(draftEvent.startStr) : null;
+    const endDate = draftEvent.endStr ? new Date(draftEvent.endStr) : null;
+    
+    const formatTime = (date) => {
+      if (!date) return '';
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
+    popup.innerHTML = `
+      <div class="popup-header">
+        <span class="close-btn" id="popup-close">✕</span>
+      </div>
+      <div class="popup-body">
+        <input 
+          type="text" 
+          id="popup-event-title"
+          placeholder="添加课程或任务名称..." 
+          value="${eventTitle}"
+          autocomplete="off"
+        />
+        <div class="time-display">
+          ${formatTime(startDate)} - ${formatTime(endDate)}
+        </div>
+      </div>
+      <div class="popup-footer">
+        <button class="save-btn" id="popup-save">保存</button>
+      </div>
+    `;
+
+    document.body.appendChild(popup);
+
+    document.getElementById('popup-close').addEventListener('click', closePopup);
+    document.getElementById('popup-save').addEventListener('click', savePopupEvent);
+    
+    const input = document.getElementById('popup-event-title');
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') savePopupEvent();
+      if (e.key === 'Escape') closePopup();
+    });
+    
+    setTimeout(() => input.focus(), 100);
+  }
+
+  function removePopup() {
+    const existing = document.getElementById('event-popup-card');
+    if (existing) {
+      existing.remove();
+    }
+  }
+
+  function closePopup() {
+    showPopup = false;
+    if (draftEvent && calendarInstance) {
+      calendarInstance.unselect();
+    }
+    removePopup();
+  }
+
+  function setupFCCreateButton() {
+    const btn = document.getElementById('fc-create-btn');
+    if (!btn) return;
+    
+    btn.onclick = function() {
+      const today = new Date();
+      const start = new Date(today);
+      start.setHours(9, 0, 0, 0);
+      const end = new Date(today);
+      end.setHours(10, 0, 0, 0);
+      
+      popupPos = { 
+        x: window.innerWidth / 2 - 150, 
+        y: window.innerHeight / 2 - 100 
+      };
+      draftEvent = {
+        startStr: start.toISOString(),
+        endStr: end.toISOString(),
+        allDay: false,
+        view: { calendar: calendarInstance }
+      };
+      eventTitle = '';
+      showPopup = true;
+      renderPopup();
+    };
+  }
+
+  function setupCalendarToolbar() {
+    const todayBtn = document.getElementById('fc-today');
+    const prevBtn = document.getElementById('fc-prev');
+    const nextBtn = document.getElementById('fc-next');
+    const periodEl = document.getElementById('current-period');
+    const viewBtns = document.querySelectorAll('.view-btn');
+    const zoomInBtn = document.getElementById('zoom-in');
+    const zoomOutBtn = document.getElementById('zoom-out');
+    const zoomLevelEl = document.getElementById('zoom-level');
+
+    if (!todayBtn || !prevBtn || !nextBtn || !periodEl) return;
+
+    todayBtn.onclick = function() {
+      if (calendarInstance) {
+        calendarInstance.today();
+      }
+    };
+
+    prevBtn.onclick = function() {
+      if (calendarInstance) {
+        calendarInstance.prev();
+      }
+    };
+
+    nextBtn.onclick = function() {
+      if (calendarInstance) {
+        calendarInstance.next();
+      }
+    };
+
+    viewBtns.forEach(btn => {
+      btn.onclick = function() {
+        if (!calendarInstance) return;
+        
+        viewBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        const view = btn.dataset.view;
+        if (view === 'month') {
+          calendarInstance.changeView('dayGridMonth');
+        } else if (view === 'week') {
+          calendarInstance.changeView('timeGridWeek');
+        } else if (view === 'day') {
+          calendarInstance.changeView('timeGridDay');
+        }
+      };
+    });
+
+    if (zoomInBtn && zoomOutBtn && zoomLevelEl) {
+      zoomInBtn.onclick = function() {
+        if (currentZoom < 200) {
+          currentZoom += 10;
+          applyZoom();
+        }
+      };
+
+      zoomOutBtn.onclick = function() {
+        if (currentZoom > 50) {
+          currentZoom -= 10;
+          applyZoom();
+        }
+      };
+
+      function applyZoom() {
+        const calendarApp = document.getElementById('calendarApp');
+        if (calendarApp) {
+          calendarApp.style.transform = `scale(${currentZoom / 100})`;
+          // 调整容器高度以适应缩放
+          const scale = currentZoom / 100;
+          calendarApp.style.height = `${100 / scale}%`;
+        }
+        zoomLevelEl.textContent = currentZoom + '%';
+      }
+    }
+  }
+
+  function setupSidebarResize() {
+    const sidebar = document.getElementById('sidebar');
+    const resizeHandle = document.getElementById('sidebar-resize-handle');
+    
+    if (!sidebar || !resizeHandle) return;
+
+    let isResizing = false;
+    let startX = 0;
+    let startWidth = 0;
+
+    resizeHandle.addEventListener('mousedown', function(e) {
+      isResizing = true;
+      startX = e.clientX;
+      startWidth = sidebar.offsetWidth;
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    });
+
+    document.addEventListener('mousemove', function(e) {
+      if (!isResizing) return;
+      
+      const diff = e.clientX - startX;
+      const newWidth = startWidth + diff;
+      
+      if (newWidth >= 200 && newWidth <= 400) {
+        sidebar.style.width = newWidth + 'px';
+      }
+    });
+
+    document.addEventListener('mouseup', function() {
+      if (isResizing) {
+        isResizing = false;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
+    });
+  }
+
+  function savePopupEvent() {
+    const input = document.getElementById('popup-event-title');
+    if (!input || !input.value.trim() || !draftEvent) {
+      closePopup();
+      return;
+    }
+
+    const newEvent = {
+      id: `skippy_${Date.now()}`,
+      title: input.value.trim(),
+      start: draftEvent.startStr,
+      end: draftEvent.endStr,
+      allDay: draftEvent.allDay || false,
+      backgroundColor: '#4285F4',
+      borderColor: '#4285F4'
+    };
+
+    if (calendarInstance) {
+      calendarInstance.addEvent(newEvent);
+    }
+
+    if (window.electronAPI?.db?.addEvent) {
+      window.electronAPI.db.addEvent({
+        id: newEvent.id,
+        title: newEvent.title,
+        start: newEvent.start,
+        end: newEvent.end,
+        allDay: newEvent.allDay
+      }).catch(err => console.error('[Calendar] Failed to save event to database:', err));
+    }
+
+    closePopup();
+  }
+
   function renderCalendar() {
+    if (typeof FullCalendar !== 'undefined') {
+      if (!calendarInstance) {
+        initFullCalendar().then(() => {
+          setupFCCreateButton();
+        });
+      } else {
+        setupFCCreateButton();
+      }
+      return;
+    }
+
     const calendar = document.getElementById('calendar') || document.getElementById('calendar-week-view');
     if (!calendar) return;
     
@@ -569,33 +1130,9 @@
       }
     });
     
-    document.getElementById('prevPeriod').addEventListener('click', () => {
-      if (currentView === 'week') {
-        currentDate.setDate(currentDate.getDate() - 7);
-      } else {
-        currentDate.setMonth(currentDate.getMonth() - 1);
-      }
-      renderCalendar();
-    });
-
-    document.getElementById('nextPeriod').addEventListener('click', () => {
-      if (currentView === 'week') {
-        currentDate.setDate(currentDate.getDate() + 7);
-      } else {
-        currentDate.setMonth(currentDate.getMonth() + 1);
-      }
-      renderCalendar();
-    });
-
-    document.querySelectorAll('.view-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentView = btn.dataset.view;
-        updatePeriodButtonText();
-        renderCalendar();
-      });
-    });
+    // 旧的导航按钮已移除，使用 FullCalendar 自定义工具栏
+    // prevPeriod 和 nextPeriod 按钮已在 HTML 中移除
+    // view-btn 事件已在 setupCalendarToolbar 中处理
   }
 
   async function loadSettingsData() {
@@ -996,6 +1533,13 @@ END:VEVENT
     setCurrentDate,
     getCurrentDate,
     setCurrentView,
-    getCurrentView
+    getCurrentView,
+    refreshCalendar: function() {
+      if (calendarInstance) {
+        calendarInstance.refetchEvents();
+      }
+    },
+    navigateMiniCalendar: navigateMiniCalendar,
+    selectMiniCalendarDate: selectMiniCalendarDate
   };
 })();

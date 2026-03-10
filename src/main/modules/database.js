@@ -265,6 +265,121 @@ function importData(courses) {
   saveDatabase();
 }
 
+function getAllEvents() {
+  const results = db.exec('SELECT * FROM events ORDER BY start_time');
+  if (results.length === 0) return [];
+  
+  const columns = results[0].columns;
+  const values = results[0].values;
+  
+  return values.map(row => {
+    const event = {};
+    columns.forEach((col, i) => {
+      event[col] = row[i];
+    });
+    return parseEvent(event);
+  });
+}
+
+function getEventById(id) {
+  const stmt = db.prepare('SELECT * FROM events WHERE id = ?');
+  stmt.bind([id]);
+  
+  if (stmt.step()) {
+    const row = stmt.getAsObject();
+    stmt.free();
+    return parseEvent(row);
+  }
+  stmt.free();
+  return null;
+}
+
+function saveEvent(event) {
+  const existing = getEventById(event.id);
+  
+  if (existing) {
+    db.run(`
+      UPDATE events SET 
+        title = ?, start_time = ?, end_time = ?,
+        is_all_day = ?, category = ?, rrule = ?, color = ?,
+        updatedAt = datetime('now')
+      WHERE id = ?
+    `, [
+      event.title, event.start, event.end || null,
+      event.allDay ? 1 : 0, event.category || 'default', event.rrule || null,
+      event.color || '#4285F4', event.id
+    ]);
+  } else {
+    db.run(`
+      INSERT INTO events (id, title, start_time, end_time, is_all_day, category, rrule, color)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      event.id, event.title, event.start, event.end || null,
+      event.allDay ? 1 : 0, event.category || 'default', event.rrule || null,
+      event.color || '#4285F4'
+    ]);
+  }
+  
+  saveDatabase();
+  return getEventById(event.id);
+}
+
+function deleteEvent(id) {
+  db.run('DELETE FROM events WHERE id = ?', [id]);
+  saveDatabase();
+}
+
+function getTodayEvents() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  const todayStr = `${year}-${month}-${day}`;
+
+  const results = db.exec(`
+    SELECT * FROM events 
+    WHERE start_time LIKE '${todayStr}%'
+    ORDER BY start_time ASC
+  `);
+  
+  if (results.length === 0) return [];
+  
+  const columns = results[0].columns;
+  return results[0].values.map(row => {
+    const event = {};
+    columns.forEach((col, i) => {
+      event[col] = row[i];
+    });
+    return parseEventForToday(event);
+  });
+}
+
+function parseEvent(event) {
+  if (!event) return null;
+  return {
+    id: event.id,
+    title: event.title,
+    start: event.start_time,
+    end: event.end_time,
+    allDay: event.is_all_day === 1,
+    category: event.category,
+    rrule: event.rrule,
+    backgroundColor: event.color,
+    color: event.color
+  };
+}
+
+function parseEventForToday(event) {
+  if (!event) return null;
+  return {
+    id: event.id,
+    title: event.title,
+    startTimeStr: event.start_time ? event.start_time.split('T')[1]?.substring(0, 5) : '',
+    endTimeStr: event.end_time ? event.end_time.split('T')[1]?.substring(0, 5) : '',
+    rawStart: event.start_time
+  };
+}
+
 module.exports = {
   initDatabase,
   closeDatabase,
@@ -276,5 +391,10 @@ module.exports = {
   saveLesson,
   getSetting,
   setSetting,
-  importData
+  importData,
+  getAllEvents,
+  getEventById,
+  saveEvent,
+  deleteEvent,
+  getTodayEvents
 };

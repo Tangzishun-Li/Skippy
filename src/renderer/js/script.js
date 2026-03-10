@@ -789,53 +789,13 @@ function getCoursesForDate(date) {
     // 遍历课程的每一节课
     if (course.lessons && Array.isArray(course.lessons)) {
       course.lessons.forEach((lesson, index) => {
-      // 检查课程是否有具体日期
-      if (lesson.date) {
-        const lessonDate = new Date(lesson.date);
-        lessonDate.setHours(0, 0, 0, 0);
-        
-        // 比较日期是否匹配
-        if (lessonDate.getTime() === targetDate.getTime()) {
-          result.push({
-            name: course.name,
-            status: lesson.status,
-            problem: lesson.problem,
-            isTimeline: false
-          });
-        }
-      } else {
-        // 兼容旧的课程数据结构
-        const dayOfWeek = date.getDay();
-        if (course.dayOfWeek === dayOfWeek) {
-          // 计算课程开始日期
-          const startDate = course.startDate ? new Date(course.startDate) : new Date();
-          startDate.setHours(0, 0, 0, 0);
+        // 检查课程是否有具体日期
+        if (lesson.date) {
+          const lessonDate = new Date(lesson.date);
+          lessonDate.setHours(0, 0, 0, 0);
           
-          // 计算应该上课的日期
-          let expectedLessonDate = new Date(startDate);
-          
-          // 根据频率和索引计算实际日期
-          switch (course.frequency || 'weekly') {
-            case 'daily':
-              expectedLessonDate.setDate(startDate.getDate() + index);
-              break;
-            case 'weekly':
-              expectedLessonDate.setDate(startDate.getDate() + (index * 7));
-              break;
-            case 'biweekly':
-              expectedLessonDate.setDate(startDate.getDate() + (index * 14));
-              break;
-            case 'monthly':
-              expectedLessonDate.setMonth(startDate.getMonth() + index);
-              break;
-          }
-          
-          // 标准化日期时间
-          expectedLessonDate.setHours(0, 0, 0, 0);
-          
-          // 只有当预期日期与目标日期匹配时才显示课程
-          // 同时需要检查该日期不是节假日
-          if (expectedLessonDate.getTime() === targetDate.getTime() && !isHoliday(targetDate)) {
+          // 比较日期是否匹配
+          if (lessonDate.getTime() === targetDate.getTime()) {
             result.push({
               name: course.name,
               status: lesson.status,
@@ -843,9 +803,50 @@ function getCoursesForDate(date) {
               isTimeline: false
             });
           }
+        } else {
+          // 兼容旧的课程数据结构
+          const dayOfWeek = date.getDay();
+          if (course.dayOfWeek === dayOfWeek) {
+            // 计算课程开始日期
+            const startDate = course.startDate ? new Date(course.startDate) : new Date();
+            startDate.setHours(0, 0, 0, 0);
+            
+            // 计算应该上课的日期
+            let expectedLessonDate = new Date(startDate);
+            
+            // 根据频率和索引计算实际日期
+            switch (course.frequency || 'weekly') {
+              case 'daily':
+                expectedLessonDate.setDate(startDate.getDate() + index);
+                break;
+              case 'weekly':
+                expectedLessonDate.setDate(startDate.getDate() + (index * 7));
+                break;
+              case 'biweekly':
+                expectedLessonDate.setDate(startDate.getDate() + (index * 14));
+                break;
+              case 'monthly':
+                expectedLessonDate.setMonth(startDate.getMonth() + index);
+                break;
+            }
+            
+            // 标准化日期时间
+            expectedLessonDate.setHours(0, 0, 0, 0);
+            
+            // 只有当预期日期与目标日期匹配时才显示课程
+            // 同时需要检查该日期不是节假日
+            if (expectedLessonDate.getTime() === targetDate.getTime() && !isHoliday(targetDate)) {
+              result.push({
+                name: course.name,
+                status: lesson.status,
+                problem: lesson.problem,
+                isTimeline: false
+              });
+            }
+          }
         }
-      }
-    });
+      });
+    }
   });
   
   return result;
