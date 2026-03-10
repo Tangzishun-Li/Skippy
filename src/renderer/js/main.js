@@ -2,14 +2,14 @@
   'use strict';
 
   function switchView(view) {
-    const calendarView = document.getElementById('calendarView');
+    const calendarApp = document.getElementById('calendarApp');
     const courseListView = document.getElementById('courseListView');
 
-    if (calendarView) calendarView.style.display = 'none';
+    if (calendarApp) calendarApp.style.display = 'none';
     if (courseListView) courseListView.style.display = 'none';
 
     if (view === 'calendar') {
-      if (calendarView) calendarView.style.display = 'block';
+      if (calendarApp) calendarApp.style.display = 'flex';
     } else if (view === 'course-list') {
       if (courseListView) courseListView.style.display = 'block';
     }
