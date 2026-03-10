@@ -1,0 +1,135 @@
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background-color: #f8f9fa;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 260px;
+  background-color: #ffffff;
+  border-right: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 0;
+  z-index: 10;
+}
+
+.sidebar-header {
+  padding: 0 16px 20px 16px;
+}
+
+.create-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #3c4043;
+  cursor: pointer;
+  box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.create-btn:hover {
+  background-color: #f8f9fa;
+  box-shadow: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
+}
+
+.mini-calendar-wrapper {
+  padding: 0 16px;
+}
+
+.react-calendar {
+  width: 100%;
+  border: none !important;
+  font-family: inherit;
+}
+
+.react-calendar__navigation button {
+  min-width: 30px;
+  background: none;
+  border-radius: 4px;
+}
+
+.react-calendar__navigation button:hover {
+  background-color: #f1f3f4 !important;
+}
+
+.react-calendar__month-view__days__day {
+  border-radius: 50%;
+  height: 32px;
+  width: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2px auto;
+}
+
+.react-calendar__month-view__days__day:hover {
+  background-color: #f1f3f4 !important;
+}
+
+.react-calendar__tile--active, 
+.react-calendar__tile--hasActive {
+  background-color: #1a73e8 !important;
+  color: white !important;
+}
+
+.react-calendar__tile--now {
+  background-color: #e8f0fe;
+  color: #1a73e8;
+}
+
+.calendar-filters {
+  padding: 20px 16px;
+  border-top: 1px solid #e0e0e0;
+  margin-top: auto;
+}
+
+.calendar-filters h3 {
+  font-size: 14px;
+  color: #5f6368;
+  margin: 0 0 12px 0;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.filter-item label {
+  font-size: 13px;
+  color: #3c4043;
+  cursor: pointer;
+}
+
+.main-calendar {
+  flex: 1;
+  padding: 16px 24px;
+  position: relative;
+  background-color: #ffffff;
+}
+
+.fc .fc-toolbar.fc-header-toolbar {
+  margin-bottom: 24px;
+}
+
+.fc-theme-standard td, .fc-theme-standard th {
+  border-color: #e0e0e0;
+}
+
+.fc .fc-timegrid-now-indicator-line {
+  border-color: #ea4335;
+}
+
+.fc .fc-timegrid-now-indicator-arrow {
+  border-color: #ea4335;
+  background-color: #ea4335;
+}

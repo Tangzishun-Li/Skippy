@@ -1,0 +1,72 @@
+.event-popup-card {
+  width: 300px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 0 1px rgba(0,0,0,0.2);
+  padding: 16px;
+  animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.popup-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.close-btn {
+  cursor: pointer;
+  color: #5f6368;
+  font-size: 14px;
+  padding: 4px;
+}
+
+.close-btn:hover {
+  background-color: #f1f3f4;
+  border-radius: 50%;
+}
+
+.popup-body input {
+  width: 100%;
+  border: none;
+  border-bottom: 2px solid #1a73e8;
+  font-size: 18px;
+  padding: 4px 0;
+  outline: none;
+  margin-bottom: 12px;
+  color: #3c4043;
+}
+
+.popup-body input::placeholder {
+  color: #70757a;
+}
+
+.time-display {
+  font-size: 13px;
+  color: #5f6368;
+  margin-bottom: 16px;
+}
+
+.popup-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.save-btn {
+  background-color: #1a73e8;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.save-btn:hover {
+  background-color: #1557b0;
+}

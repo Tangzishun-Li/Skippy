@@ -2,6 +2,9 @@ const { contextBridge, ipcRenderer } = require('electron')
 
 function setupPreloadBridge() {
   contextBridge.exposeInMainWorld('electronAPI', {
+    resizeFloatWindow: (expand) => {
+      ipcRenderer.invoke('resize-float-window', expand)
+    },
     ballWindowMove: (data) => {
       ipcRenderer.send('ballWindowMove', data)
     },
@@ -35,7 +38,13 @@ function setupPreloadBridge() {
       saveLesson: (lesson) => ipcRenderer.invoke('db:saveLesson', lesson),
       getSetting: (key) => ipcRenderer.invoke('db:getSetting', key),
       setSetting: (key, value) => ipcRenderer.invoke('db:setSetting', key, value),
-      importData: (courses) => ipcRenderer.invoke('db:importData', courses)
+      importData: (courses) => ipcRenderer.invoke('db:importData', courses),
+      getEvents: () => ipcRenderer.invoke('db:getEvents'),
+      getEventById: (id) => ipcRenderer.invoke('db:getEventById', id),
+      addEvent: (eventData) => ipcRenderer.invoke('db:addEvent', eventData),
+      updateEvent: (eventData) => ipcRenderer.invoke('db:updateEvent', eventData),
+      deleteEvent: (id) => ipcRenderer.invoke('db:deleteEvent', id),
+      getTodayEvents: () => ipcRenderer.invoke('db:getTodayEvents')
     },
     sync: {
       getStatus: () => ipcRenderer.invoke('sync:getStatus'),

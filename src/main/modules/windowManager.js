@@ -1,25 +1,27 @@
-const { BrowserWindow, app } = require('electron')
+const { BrowserWindow, app, ipcMain, screen } = require('electron')
 const path = require('path')
 
 const BASE_PATH = path.join(__dirname, '..')
 
 let mainWindow = null
 let floatingBallWindow = null
+let isFloatExpanded = false
 
 const MAIN_WINDOW_CONFIG = {
-  width: 800,
-  height: 600,
+  width: 1200,
+  height: 800,
   autoHideMenuBar: true
 }
 
 const FLOATING_BALL_CONFIG = {
-  width: 85,
-  height: 50,
+  width: 60,
+  height: 60,
   frame: false,
   transparent: true,
   alwaysOnTop: true,
   resizable: false,
-  skipTaskbar: true
+  skipTaskbar: true,
+  hasShadow: false
 }
 
 function getPreloadPath() {
@@ -65,8 +67,12 @@ function createFloatingBallWindow() {
     return floatingBallWindow
   }
 
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize
+
   floatingBallWindow = new BrowserWindow({
     ...FLOATING_BALL_CONFIG,
+    x: width - 80,
+    y: 100,
     webPreferences: {
       preload: getPreloadPath(),
       nodeIntegration: false,
@@ -76,18 +82,86 @@ function createFloatingBallWindow() {
 
   floatingBallWindow.loadFile(path.join(BASE_PATH, '../floating/floating-ball.html'))
 
-  const { screen } = require('electron')
-  const { left, top } = {
-    left: screen.getPrimaryDisplay().workAreaSize.width - 150,
-    top: screen.getPrimaryDisplay().workAreaSize.height - 100
-  }
-  floatingBallWindow.setPosition(left, top)
+  floatingBallWindow.on('moved', () => {
+    if (isFloatExpanded) return
+
+    const bounds = floatingBallWindow.getBounds()
+    const display = screen.getDisplayNearestPoint({ x: bounds.x, y: bounds.y })
+    const screenWidth = display.workAreaSize.width
+    const screenX = display.bounds.x
+
+    const snapMargin = 10
+    const ballCenter = bounds.x + bounds.width / 2
+    const isLeft = ballCenter < (screenX + screenWidth / 2)
+    const targetX = isLeft ? screenX + snapMargin : screenX + screenWidth - bounds.width - snapMargin
+
+    animateWindow(floatingBallWindow, targetX, bounds.y)
+  })
 
   floatingBallWindow.on('closed', () => {
     floatingBallWindow = null
   })
 
   return floatingBallWindow
+}
+
+function animateWindow(win, targetX, targetY) {
+  const startBounds = win.getBounds()
+  const distanceX = targetX - startBounds.x
+
+  if (Math.abs(distanceX) < 2) return
+
+  const totalFrames = 15
+  let currentFrame = 0
+
+  const interval = setInterval(() => {
+    currentFrame++
+    const progress = currentFrame / totalFrames
+    const easeOut = 1 - Math.pow(1 - progress, 3)
+    const currentX = Math.round(startBounds.x + distanceX * easeOut)
+
+    if (!win.isDestroyed()) {
+      win.setBounds({
+        x: currentX,
+        y: targetY,
+        width: startBounds.width,
+        height: startBounds.height
+      })
+    }
+
+    if (currentFrame >= totalFrames) {
+      clearInterval(interval)
+    }
+  }, 16)
+}
+
+function registerWindowIpcHandlers(windowManager) {
+  ipcMain.handle('resize-float-window', (event, expand) => {
+    if (!floatingBallWindow) return
+
+    isFloatExpanded = expand
+    const bounds = floatingBallWindow.getBounds()
+    const display = screen.getDisplayNearestPoint({ x: bounds.x, y: bounds.y })
+    const screenWidth = display.workAreaSize.width
+    const screenX = display.bounds.x
+
+    if (expand) {
+      const newWidth = 280
+      const newHeight = 350
+      let newX = bounds.x
+
+      if (bounds.x + newWidth > screenX + screenWidth) {
+        newX = screenX + screenWidth - newWidth - 10
+      }
+
+      floatingBallWindow.setBounds({ x: newX, y: bounds.y, width: newWidth, height: newHeight })
+    } else {
+      const newWidth = 60
+      const newHeight = 60
+      floatingBallWindow.setBounds({ x: bounds.x, y: bounds.y, width: newWidth, height: newHeight })
+      floatingBallWindow.emit('moved')
+    }
+  })
 }
 
 function getMainWindow() {
@@ -152,7 +226,7 @@ function setFloatingBallAlwaysOnTop(flag) {
 
 function moveFloatingBall(x, y) {
   if (floatingBallWindow) {
-    floatingBallWindow.setBounds({ x, y, width: 85, height: 50 })
+    floatingBallWindow.setBounds({ x, y, width: 60, height: 60 })
   }
 }
 
@@ -182,6 +256,7 @@ function destroyAllWindows() {
 module.exports = {
   createMainWindow,
   createFloatingBallWindow,
+  registerWindowIpcHandlers,
   getMainWindow,
   getFloatingBallWindow,
   showMainWindow,

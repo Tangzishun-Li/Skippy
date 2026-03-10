@@ -159,6 +159,62 @@ function registerIpcHandlers(windowManager) {
     }
   })
 
+  // Events IPC handlers
+  ipcMain.handle('db:getEvents', async () => {
+    try {
+      return database.getAllEvents()
+    } catch (error) {
+      console.error('[DB] Error getting events:', error)
+      return []
+    }
+  })
+
+  ipcMain.handle('db:getEventById', async (event, id) => {
+    try {
+      return database.getEventById(id)
+    } catch (error) {
+      console.error('[DB] Error getting event:', error)
+      return null
+    }
+  })
+
+  ipcMain.handle('db:addEvent', async (event, eventData) => {
+    try {
+      return database.saveEvent(eventData)
+    } catch (error) {
+      console.error('[DB] Error adding event:', error)
+      return null
+    }
+  })
+
+  ipcMain.handle('db:updateEvent', async (event, eventData) => {
+    try {
+      return database.saveEvent(eventData)
+    } catch (error) {
+      console.error('[DB] Error updating event:', error)
+      return null
+    }
+  })
+
+  ipcMain.handle('db:deleteEvent', async (event, id) => {
+    try {
+      database.deleteEvent(id)
+      return true
+    } catch (error) {
+      console.error('[DB] Error deleting event:', error)
+      return false
+    }
+  })
+
+  ipcMain.handle('db:getTodayEvents', async () => {
+    try {
+      return database.getTodayEvents()
+    } catch (error) {
+      console.error('[DB] Error getting today events:', error)
+      return []
+    }
+  })
+
   // Sync IPC handlers
   ipcMain.handle('sync:getStatus', async () => {
     return sync.getStatus()

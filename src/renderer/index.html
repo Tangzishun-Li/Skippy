@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Skippy</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components/calendar.css">
+  <!-- FullCalendar CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 </head>
 <body>
   <!-- 导航栏 -->
@@ -20,20 +23,51 @@
   
   <div class="container">
     <!-- 日历视图 -->
-    <div class="view" id="calendarView">
-      <div class="calendar-header">
-        <h2>课程日历</h2>
-        <div class="calendar-controls">
-          <button id="prevPeriod">⟪ 上月</button>
-          <h3 id="currentPeriod"></h3>
-          <button id="nextPeriod">下月 ⟫</button>
+    <div class="app-container" id="calendarApp">
+      <!-- 左侧边栏 -->
+      <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <button class="create-btn" id="fc-create-btn">+ 创建日程</button>
+        </div>
+        <div class="mini-calendar-wrapper">
+          <div id="mini-calendar"></div>
+        </div>
+        <div class="calendar-filters">
+           <h3>我的日历</h3>
+           <div class="filter-item">
+             <input type="checkbox" id="filter-course" checked>
+             <label for="filter-course">课程</label>
+           </div>
+           <div class="filter-item">
+             <input type="checkbox" id="filter-task" checked>
+             <label for="filter-task">任务</label>
+           </div>
+        </div>
+        <div class="sidebar-resize-handle" id="sidebar-resize-handle"></div>
+      </div>
+      
+      <!-- 右侧主日历 -->
+      <div class="main-calendar">
+        <div class="calendar-toolbar">
+          <button id="fc-today">今天</button>
+          <button id="fc-prev">‹ 上月</button>
+          <button id="fc-next">下月 ›</button>
+          <h2 id="current-period"></h2>
           <div class="view-toggle">
-            <button class="view-btn active" data-view="month">月视图</button>
-            <button class="view-btn" data-view="week">周视图</button>
+            <button class="view-btn active" data-view="month">月</button>
+            <button class="view-btn" data-view="week">周</button>
+            <button class="view-btn" data-view="day">日</button>
+          </div>
+          <div class="zoom-controls">
+            <button id="zoom-out">−</button>
+            <span id="zoom-level">100%</span>
+            <button id="zoom-in">+</button>
           </div>
         </div>
+        <div class="calendar-container">
+          <div id="calendar"></div>
+        </div>
       </div>
-      <div id="calendar"></div>
     </div>
     
     <button id="fab-add" class="fab-button">
