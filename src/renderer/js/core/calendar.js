@@ -10,6 +10,55 @@
   let draftEvent = null;
   let eventTitle = '';
   let currentZoom = 100;
+  let currentViewMode = 'month';
+
+  function switchToGanttView() {
+    const calendarContainer = document.querySelector('.calendar-container');
+    if (!calendarContainer) return;
+    
+    calendarContainer.innerHTML = '<div id="gantt-view"></div>';
+    
+    if (window.GanttView) {
+      window.GanttView.init(document.getElementById('gantt-view'));
+    }
+    
+    currentViewMode = 'gantt';
+  }
+
+  function switchToRingView() {
+    const calendarContainer = document.querySelector('.calendar-container');
+    if (!calendarContainer) return;
+    
+    calendarContainer.innerHTML = '<div id="ring-view"></div>';
+    
+    if (window.RingView) {
+      window.RingView.init(document.getElementById('ring-view'));
+    }
+    
+    currentViewMode = 'ring';
+  }
+
+  function switchToFullCalendar(view) {
+    const calendarContainer = document.querySelector('.calendar-container');
+    if (!calendarContainer) return;
+    
+    if (currentViewMode !== 'month' && currentViewMode !== 'week' && currentViewMode !== 'day') {
+      calendarContainer.innerHTML = '<div id="calendar"></div>';
+      initFullCalendar();
+    }
+    
+    if (calendarInstance) {
+      if (view === 'month') {
+        calendarInstance.changeView('dayGridMonth');
+      } else if (view === 'week') {
+        calendarInstance.changeView('timeGridWeek');
+      } else if (view === 'day') {
+        calendarInstance.changeView('timeGridDay');
+      }
+    }
+    
+    currentViewMode = view;
+  }
 
   function setCurrentDate(date) {
     currentDate = date;
@@ -554,28 +603,77 @@
 
     viewBtns.forEach(btn => {
       btn.onclick = function() {
-        if (!calendarInstance) return;
-        
-        viewBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        
         const view = btn.dataset.view;
+        
+        if (view !== 'day') {
+          viewBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+        }
+        
         if (view === 'month') {
           calendarInstance.changeView('dayGridMonth');
           prevBtn.textContent = '‹ 上月';
           nextBtn.textContent = '下月 ›';
+          switchToFullCalendar('month');
         } else if (view === 'week') {
           calendarInstance.changeView('timeGridWeek');
           prevBtn.textContent = '‹ 上周';
           nextBtn.textContent = '下周 ›';
+          switchToFullCalendar('week');
         } else if (view === 'day') {
           calendarInstance.changeView('timeGridDay');
           prevBtn.textContent = '‹ 上一天';
           nextBtn.textContent = '下一天 ›';
+          switchToFullCalendar('day');
+          updateDaySubviewButtons('day');
         }
+        
         updateCurrentDateDisplay();
       };
     });
+
+    const dropdownItems = document.querySelectorAll('.dropdown-item');
+    dropdownItems.forEach(item => {
+      item.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const subview = this.dataset.subview;
+        
+        dropdownItems.forEach(i => i.classList.remove('active'));
+        this.classList.add('active');
+        
+        if (subview === 'day') {
+          if (calendarInstance) {
+            calendarInstance.changeView('timeGridDay');
+          }
+          prevBtn.textContent = '‹ 上一天';
+          nextBtn.textContent = '下一天 ›';
+          switchToFullCalendar('day');
+        } else if (subview === 'gantt') {
+          prevBtn.textContent = '';
+          nextBtn.textContent = '';
+          switchToGanttView();
+        } else if (subview === 'ring') {
+          prevBtn.textContent = '';
+          nextBtn.textContent = '';
+          switchToRingView();
+        }
+        
+        updateDaySubviewButtons(subview);
+        updateCurrentDateDisplay();
+      });
+    });
+
+    function updateDaySubviewButtons(activeSubview) {
+      const dayBtn = document.querySelector('[data-view="day"]');
+      if (dayBtn) {
+        const dropdownItems = document.querySelectorAll('.dropdown-item');
+        dropdownItems.forEach(i => i.classList.remove('active'));
+        const activeItem = document.querySelector(`[data-subview="${activeSubview}"]`);
+        if (activeItem) {
+          activeItem.classList.add('active');
+        }
+      }
+    }
 
     function updateCurrentDateDisplay() {
       if (!calendarInstance || !currentDateDisplay) return;
@@ -1591,8 +1689,35 @@ END:VEVENT
       if (calendarInstance) {
         calendarInstance.refetchEvents();
       }
+      if (window.GanttView) {
+        window.GanttView.refresh();
+      }
+      if (window.RingView) {
+        window.RingView.refresh();
+      }
     },
     navigateMiniCalendar: navigateMiniCalendar,
-    selectMiniCalendarDate: selectMiniCalendarDate
+    selectMiniCalendarDate: selectMiniCalendarDate,
+    getEvents: function() {
+      return events || [];
+    },
+    showEventPopup: function(config) {
+      popupPos = { x: config.x, y: config.y };
+      draftEvent = {
+        startStr: config.defaultTime ? new Date().toISOString().split('T')[0] + 'T' + config.defaultTime + ':00' : null,
+        endStr: config.defaultTime ? new Date().toISOString().split('T')[0] + 'T' + config.defaultTime + ':00' : null,
+        allDay: false
+      };
+      eventTitle = config.event ? config.event.title : '';
+      showPopup = true;
+      
+      if (config.event) {
+        draftEvent.startStr = config.event.start;
+        draftEvent.endStr = config.event.end;
+        eventTitle = config.event.title;
+      }
+      
+      renderPopup();
+    }
   };
 })();

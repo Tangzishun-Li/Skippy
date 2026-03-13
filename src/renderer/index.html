@@ -6,6 +6,7 @@
   <title>Skippy</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/components/calendar.css">
+  <link rel="stylesheet" href="css/components/gantt-ring.css">
   <!-- FullCalendar CDN -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 </head>
@@ -54,9 +55,16 @@
           <button id="fc-next">下月 ›</button>
           <h2 id="current-period"></h2>
           <div class="view-toggle">
-            <button class="view-btn active" data-view="month">月</button>
+            <button class="view-btn" data-view="month">月</button>
             <button class="view-btn" data-view="week">周</button>
-            <button class="view-btn" data-view="day">日</button>
+            <div class="view-dropdown" id="day-view-dropdown">
+              <button class="view-btn" data-view="day">日 ▾</button>
+              <div class="dropdown-menu">
+                <button class="dropdown-item" data-subview="day">日视图</button>
+                <button class="dropdown-item" data-subview="gantt">甘特图</button>
+                <button class="dropdown-item" data-subview="ring">环形图</button>
+              </div>
+            </div>
           </div>
           <div class="current-date-display" id="current-date-display"></div>
           <div class="zoom-controls">
@@ -465,6 +473,8 @@
   <script src="js/core/status.js"></script>
   <script src="js/core/timeline.js"></script>
   <script src="js/core/calendar.js"></script>
+  <script src="js/core/ganttView.js"></script>
+  <script src="js/core/ringView.js"></script>
   <script src="js/core/course.js"></script>
   <script src="js/modules/course-settings.js"></script>
   <script src="js/utils/sync.js"></script>

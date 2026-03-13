@@ -86,20 +86,58 @@ sequenceDiagram
 
 ```mermaid
 graph LR
-    A[主窗口] --> B[日历视图]
-    A --> C[悬浮球]
-    B --> D[FullCalendar]
-    B --> E[迷你日历]
-    B --> F[侧边栏]
-    C --> G[今日日程面板]
-    D --> H[events 表]
-    E --> D
+    subgraph "HTML 结构层"
+        A[index.html] --> B[.app-container#calendarApp]
+        B --> C[.sidebar 侧边栏]
+        B --> D[.main-calendar 主日历]
+        
+        C --> C1[.sidebar-header 创建按钮]
+        C --> C2[#mini-calendar 迷你日历]
+        C --> C3[.calendar-filters 筛选器]
+        
+        D --> D1[.calendar-toolbar 工具栏]
+        D --> D2[.calendar-container 容器]
+        
+        D1 --> D11[#fc-today 今天按钮]
+        D1 --> D12[#fc-prev/#fc-next 导航]
+        D1 --> D13[.view-toggle 视图切换]
+        D1 --> D14[.current-date-display 日期]
+        D1 --> D15[.zoom-controls 缩放]
+        
+        D2 --> D21[#calendar FullCalendar挂载点]
+    end
+    
+    subgraph "JavaScript 逻辑层"
+        E[calendar.js] --> E1[initFullCalendar 初始化]
+        E --> E2[initMiniCalendar 迷你日历]
+        E --> E3[setupCalendarToolbar 工具栏]
+        E --> E4[renderMiniCalendar 渲染]
+        E --> E5[handleDatesSet 日期处理]
+        E --> E6[事件管理 CRUD]
+    end
+    
+    subgraph "CSS 样式层"
+        F[calendar.css] --> F1[.sidebar 侧边栏样式]
+        F --> F2[.main-calendar 主日历样式]
+        F --> F3[.calendar-toolbar 工具栏样式]
+        F --> F4[.mini-calendar 迷你日历样式]
+        F --> F5[FullCalendar 覆盖样式]
+    end
+    
+    subgraph "数据层"
+        G[storage.js] --> H[SQLite 数据库]
+        G --> I[FullCalendar 事件]
+    end
+    
+    E --> G
+    E --> D21
     F --> D
-    G --> H
     
     style A fill:#e3f2fd
-    style D fill:#f3e5f5
-    style H fill:#e8f5e9
+    style E fill:#f3e5f5
+    style F fill:#fff3e0
+    style G fill:#e8f5e9
+    style D21 fill:#fce4ec
 ```
 
 ---

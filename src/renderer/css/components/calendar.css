@@ -1453,7 +1453,52 @@ html, body {
   gap: 0;
   border: 1px solid #dadce0;
   border-radius: 0;
-  overflow: hidden;
+  overflow: visible;
+}
+
+/* 下拉菜单样式 */
+.view-dropdown {
+  position: relative;
+}
+
+.view-dropdown .dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border: 1px solid #dadce0;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 120px;
+}
+
+.view-dropdown:hover .dropdown-menu {
+  display: block;
+}
+
+.dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 8px 16px;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: #3c4043;
+  transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+  background-color: #f1f3f4;
+}
+
+.dropdown-item.active {
+  background-color: #e8f0fe;
+  color: #1a73e8;
 }
 
 .main-calendar .calendar-toolbar .view-toggle button {
